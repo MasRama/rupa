@@ -1,6 +1,6 @@
-# Discord Bot Starter Project
+# Rupa - Discord Bot
 
-A comprehensive TypeScript Discord bot starter project with modern development practices, database integration, and robust architecture.
+Rupa is a comprehensive TypeScript Discord bot with modern development practices, database integration, and robust architecture. Built with scalability and maintainability in mind.
 
 ## 🚀 Features
 
@@ -27,7 +27,7 @@ A comprehensive TypeScript Discord bot starter project with modern development p
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd discord-bot-starter
+   cd rupa
    ```
 
 2. **Install dependencies**
@@ -57,6 +57,10 @@ A comprehensive TypeScript Discord bot starter project with modern development p
 
 5. **Deploy commands to Discord**
    ```bash
+   # Deploy commands globally (takes up to 1 hour to propagate)
+   npm run deploy-commands
+   
+   # For guild-specific deployment (instant), set GUILD_ID in .env first
    npm run deploy-commands
    ```
 
@@ -91,6 +95,21 @@ npm run format
 npm run migrate
 ```
 
+### Command Management
+```bash
+# Deploy slash commands to Discord
+npm run deploy-commands
+
+# Remove all guild-specific commands (requires GUILD_ID in .env)
+npm run remove-guild-commands
+
+# Remove all global commands
+npm run remove-global-commands
+
+# Remove both guild and global commands
+npm run remove-all-commands
+```
+
 ## 📁 Project Structure
 
 ```
@@ -115,6 +134,35 @@ src/
 ├── utils/             # Utility functions
 └── index.ts           # Application entry point
 ```
+
+## 📋 Command Deployment Strategy
+
+### Global vs Guild Commands
+
+**Global Commands:**
+- Comment out or remove `GUILD_ID` in `.env`
+- Commands available in all servers
+- Takes up to 1 hour to propagate
+- Use for production deployment
+
+**Guild-Specific Commands:**
+- Set `GUILD_ID` in `.env` to your test server ID
+- Commands appear immediately in specified server
+- Perfect for development and testing
+- Guild commands take precedence over global commands
+
+### Command Lifecycle Management
+
+1. **Development**: Use guild-specific deployment for instant testing
+2. **Testing**: Deploy to test server using `GUILD_ID`
+3. **Production**: Remove guild commands and deploy globally
+4. **Updates**: Redeploy commands when structure changes, restart bot for logic changes
+
+### Command Removal Scenarios
+
+- **Switch Guild to Global**: `npm run remove-guild-commands` → remove `GUILD_ID` → `npm run deploy-commands`
+- **Switch Global to Guild**: `npm run remove-global-commands` → set `GUILD_ID` → `npm run deploy-commands`
+- **Clean Start**: `npm run remove-all-commands` → `npm run deploy-commands`
 
 ## 🤖 Available Commands
 
@@ -247,6 +295,11 @@ export const commands: ICommand[] = [
 4. Deploy the updated commands:
 
 ```bash
+# For development (instant, requires GUILD_ID in .env)
+npm run deploy-commands
+
+# For production (global, takes up to 1 hour)
+# Remove or comment GUILD_ID in .env, then:
 npm run deploy-commands
 ```
 
@@ -273,6 +326,24 @@ export async function handleMessageCreate(message: Message): Promise<void> {
 // In your bot setup
 client.on(Events.MessageCreate, handleMessageCreate);
 ```
+
+## 🔄 Command Deployment Best Practices
+
+### When to Redeploy Commands
+- Command structure changes (name, description, options)
+- Adding or removing commands
+- Changing command permissions
+
+### When to Just Restart the Bot
+- Logic changes within command execution
+- Response message updates
+- Bug fixes that don't affect command structure
+
+### Deployment Tips
+- Use guild deployment during development for instant feedback
+- Test thoroughly in guild before global deployment
+- Global commands overwrite previous global commands (no duplicates)
+- Guild and global commands are managed separately
 
 ## 🛡️ Error Handling
 
@@ -302,6 +373,15 @@ To test your bot:
 - Manage Messages (for moderation commands)
 - Kick Members (for kick command)
 - Ban Members (for ban command)
+- View Channels
+- Connect (for voice features, if implemented)
+
+### Getting Your Guild ID
+
+1. Enable Developer Mode in Discord (User Settings → Advanced → Developer Mode)
+2. Right-click on your server name
+3. Select "Copy Server ID"
+4. Use this ID as `GUILD_ID` in your `.env` file for development
 
 ## 📦 Deployment
 
@@ -319,7 +399,7 @@ To test your bot:
 
 3. Start with PM2 or similar process manager:
    ```bash
-   pm2 start dist/index.js --name discord-bot
+   pm2 start dist/index.js --name rupa-bot
    ```
 
 ### Docker Deployment
@@ -363,11 +443,15 @@ If you encounter any issues or have questions:
 
 - [ ] Clone the repository
 - [ ] Install dependencies (`npm install`)
-- [ ] Copy and configure `.env` file
+- [ ] Copy and configure `.env` file with Discord credentials
+- [ ] Set `GUILD_ID` in `.env` for development (optional but recommended)
 - [ ] Build the project (`npm run build`)
+- [ ] Run database migrations (`npm run migrate`)
 - [ ] Deploy commands (`npm run deploy-commands`)
-- [ ] Start the bot (`npm start`)
+- [ ] Start the bot (`npm start` or `npm run dev`)
 - [ ] Test basic commands in Discord
+- [ ] Verify bot permissions in your server
 - [ ] Customize commands and features as needed
+- [ ] Deploy globally when ready for production
 
 Happy coding! 🚀

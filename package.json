@@ -1,7 +1,7 @@
 {
-  "name": "discord-bot-starter",
+  "name": "rupa",
   "version": "1.0.0",
-  "description": "A comprehensive TypeScript Discord bot starter project with database integration and modern development practices",
+  "description": "Rupa - A comprehensive TypeScript Discord bot with database integration and modern development practices",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

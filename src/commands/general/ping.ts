@@ -7,11 +7,11 @@ export const pingCommand: ICommand = {
     .setDescription('Replies with Pong! and shows bot latency'),
 
   async execute(interaction: CommandInteraction): Promise<void> {
-    const sent = await interaction.reply({ 
-      content: 'Pinging...', 
-      fetchReply: true 
+    await interaction.reply({ 
+      content: 'Pinging...' 
     });
 
+    const sent = await interaction.fetchReply();
     const botLatency = sent.createdTimestamp - interaction.createdTimestamp;
     const apiLatency = Math.round(interaction.client.ws.ping);
 

@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, PermissionFlagsBits, TextChannel, EmbedBuilder, Collection } from 'discord.js';
+import { SlashCommandBuilder, CommandInteraction, PermissionFlagsBits, TextChannel, EmbedBuilder, Collection, Message } from 'discord.js';
 import { ICommand } from '@/types/bot';
 import { logger } from '@/services/logger';
 
@@ -60,7 +60,7 @@ export const clearCommand: ICommand = {
       // Defer the reply as this might take some time
       await interaction.deferReply({ ephemeral: true });
 
-      let messages;
+      let messages: Collection<string, Message<boolean>>;
       
       if (targetUser) {
         // Fetch more messages to filter by user
@@ -88,7 +88,7 @@ export const clearCommand: ICommand = {
 
       // Filter out messages older than 14 days (Discord limitation)
       const twoWeeksAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
-      const recentMessages = messages.filter((msg: any) => msg.createdTimestamp > twoWeeksAgo);
+      const recentMessages = messages.filter(msg => msg.createdTimestamp > twoWeeksAgo);
       const oldMessages = messages.size - recentMessages.size;
 
       if (recentMessages.size === 0) {
@@ -105,12 +105,12 @@ export const clearCommand: ICommand = {
         // Single message deletion
         const firstMessage = recentMessages.first();
         if (firstMessage) {
-          await (firstMessage as any).delete();
+          await firstMessage.delete();
           deletedCount = 1;
         }
       } else {
-        // Bulk delete - cast to the proper type
-        const deleted = await channel.bulkDelete(recentMessages as any, true);
+        // Bulk delete
+        const deleted = await channel.bulkDelete(recentMessages, true);
         deletedCount = deleted.size;
       }
 

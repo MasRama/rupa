@@ -4,7 +4,7 @@ import path from 'path';
 
 export class DatabaseService {
   private static instance: DatabaseService;
-  private knexInstance: Knex;
+  private knexInstance!: Knex; // Using definite assignment assertion since it's initialized in initialize()
   private isInitialized = false;
 
   private constructor() {

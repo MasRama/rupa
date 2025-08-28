@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, EmbedBuilder, GuildMember, User } from 'discord.js';
+import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from 'discord.js';
 import { ICommand } from '@/types/bot';
 
 export const userinfoCommand: ICommand = {
@@ -9,9 +9,13 @@ export const userinfoCommand: ICommand = {
       option.setName('user')
         .setDescription('The user to get information about')
         .setRequired(false)
-    ),
+    ) as SlashCommandBuilder,
 
   async execute(interaction: CommandInteraction): Promise<void> {
+    if (!interaction.isChatInputCommand()) {
+      return;
+    }
+    
     const targetUser = interaction.options.getUser('user') || interaction.user;
     const member = interaction.guild?.members.cache.get(targetUser.id);
 

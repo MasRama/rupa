@@ -10,10 +10,14 @@ export const helpCommand: ICommand = {
       option.setName('command')
         .setDescription('Get detailed help for a specific command')
         .setRequired(false)
-    ),
+    ) as SlashCommandBuilder,
 
   async execute(interaction: CommandInteraction): Promise<void> {
-    const commandName = interaction.options.get('command')?.value as string;
+    if (!interaction.isChatInputCommand()) {
+      return;
+    }
+    
+    const commandName = interaction.options.getString('command');
     const bot = DiscordBot.getInstance();
     const commands = bot.getAllCommands();
 
@@ -41,7 +45,7 @@ export const helpCommand: ICommand = {
       // Add options if they exist
       if (command.data.options && command.data.options.length > 0) {
         const optionsText = command.data.options
-          .map(option => {
+          .map((option: any) => {
             const required = option.required ? '(required)' : '(optional)';
             return `\`${option.name}\` ${required} - ${option.description}`;
           })

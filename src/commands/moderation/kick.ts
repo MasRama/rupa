@@ -16,9 +16,13 @@ export const kickCommand: ICommand = {
         .setDescription('Reason for kicking the user')
         .setRequired(false)
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
+    .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers) as SlashCommandBuilder,
 
   async execute(interaction: CommandInteraction): Promise<void> {
+    if (!interaction.isChatInputCommand()) {
+      return;
+    }
+    
     if (!interaction.guild) {
       await interaction.reply({
         content: '❌ This command can only be used in a server.',

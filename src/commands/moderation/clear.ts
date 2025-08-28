@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, PermissionFlagsBits, TextChannel, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, CommandInteraction, PermissionFlagsBits, TextChannel, EmbedBuilder, Collection } from 'discord.js';
 import { ICommand } from '@/types/bot';
 import { logger } from '@/services/logger';
 
@@ -18,9 +18,13 @@ export const clearCommand: ICommand = {
         .setDescription('Only delete messages from this user')
         .setRequired(false)
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages),
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages) as SlashCommandBuilder,
 
   async execute(interaction: CommandInteraction): Promise<void> {
+    if (!interaction.isChatInputCommand()) {
+      return;
+    }
+    
     if (!interaction.guild) {
       await interaction.reply({
         content: '❌ This command can only be used in a server.',
@@ -61,7 +65,15 @@ export const clearCommand: ICommand = {
       if (targetUser) {
         // Fetch more messages to filter by user
         const fetchedMessages = await channel.messages.fetch({ limit: 100 });
-        messages = fetchedMessages.filter(msg => msg.author.id === targetUser.id).first(amount);
+        const userMessages = fetchedMessages.filter(msg => msg.author.id === targetUser.id);
+        // Take first 'amount' messages from the filtered collection
+        messages = new Collection();
+        let count = 0;
+        for (const [id, msg] of userMessages) {
+          if (count >= amount) break;
+          messages.set(id, msg);
+          count++;
+        }
       } else {
         // Fetch the specified amount of messages
         messages = await channel.messages.fetch({ limit: amount });
@@ -76,7 +88,7 @@ export const clearCommand: ICommand = {
 
       // Filter out messages older than 14 days (Discord limitation)
       const twoWeeksAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
-      const recentMessages = messages.filter(msg => msg.createdTimestamp > twoWeeksAgo);
+      const recentMessages = messages.filter((msg: any) => msg.createdTimestamp > twoWeeksAgo);
       const oldMessages = messages.size - recentMessages.size;
 
       if (recentMessages.size === 0) {
@@ -91,11 +103,14 @@ export const clearCommand: ICommand = {
       
       if (recentMessages.size === 1) {
         // Single message deletion
-        await recentMessages.first()?.delete();
-        deletedCount = 1;
+        const firstMessage = recentMessages.first();
+        if (firstMessage) {
+          await (firstMessage as any).delete();
+          deletedCount = 1;
+        }
       } else {
-        // Bulk delete
-        const deleted = await channel.bulkDelete(recentMessages, true);
+        // Bulk delete - cast to the proper type
+        const deleted = await channel.bulkDelete(recentMessages as any, true);
         deletedCount = deleted.size;
       }
 

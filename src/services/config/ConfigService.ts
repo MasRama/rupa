@@ -45,12 +45,12 @@ export class ConfigService {
 
   private buildConfig(): AppConfig {
     const nodeEnv = process.env.NODE_ENV || 'development';
+    const guildId = process.env.GUILD_ID;
     
-    return {
+    const config: AppConfig = {
       // Discord configuration
       discordToken: process.env.DISCORD_TOKEN || '',
       clientId: process.env.CLIENT_ID || '',
-      guildId: process.env.GUILD_ID,
       
       // Database configuration
       databasePath: process.env.DATABASE_PATH || './data/bot.db',
@@ -67,6 +67,13 @@ export class ConfigService {
       // Bot configuration
       defaultPrefix: process.env.DEFAULT_PREFIX || '!',
     };
+    
+    // Only add guildId if it's defined
+    if (guildId) {
+      config.guildId = guildId;
+    }
+    
+    return config;
   }
 
   private validateConfig(): void {

@@ -11,7 +11,10 @@
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write src/**/*.ts",
     "migrate": "ts-node src/services/database/migrate.ts",
-    "deploy-commands": "ts-node src/deploy-commands.ts"
+    "deploy-commands": "ts-node src/deploy-commands.ts",
+    "remove-global-commands": "ts-node src/remove-global-commands.ts",
+    "remove-guild-commands": "ts-node src/remove-guild-commands.ts",
+    "remove-all-commands": "ts-node src/remove-all-commands.ts"
   },
   "keywords": [
     "discord",

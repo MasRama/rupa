@@ -1,6 +1,8 @@
+import { Events } from 'discord.js';
 import { createBot } from '@/core/bot';
 import { ConfigError, loadConfig, loadEnvFile, requireDiscordCredentials } from '@/core/config';
 import { migrate, openDatabase } from '@/core/database';
+import { createJobRunner, createJobScheduler, type JobRunner } from '@/core/jobs';
 import { createLogger, flushLogger } from '@/core/logging';
 import { createRegistry } from '@/core/routing/registry';
 import { coreSchema } from '@/core/schema';
@@ -31,11 +33,23 @@ async function main(): Promise<void> {
 
   const { stats } = config;
   const stopPruning = scheduleUsagePruning(db, { retentionDays: stats.retentionDays, logger });
+  // The scheduler wakes the runner, which needs the client the bot creates.
+  let runner: JobRunner | null = null;
+  const jobs = createJobScheduler(db, registry, runAt => runner?.wake(runAt));
   const bot = createBot({
     registry,
     db,
     logger,
+    jobs,
     ...(stats.enabled && { usage: createUsageRecorder(db, { trackUsers: stats.trackUsers }) }),
+  });
+  const jobRunner = createJobRunner({ db, registry, logger, client: bot.client, scheduler: jobs });
+  runner = jobRunner;
+  // Jobs talk to Discord, so they start once the client is ready.
+  bot.client.once(Events.ClientReady, () => {
+    jobRunner.start().catch((error: unknown) => {
+      logger.error({ err: error }, 'Could not start the job runner');
+    });
   });
 
   let web: WebServer | null = null;
@@ -64,6 +78,7 @@ async function main(): Promise<void> {
     logger.info({ signal }, 'Shutting down');
     stopPruning();
     await web?.close();
+    await jobRunner.stop();
     await bot.stop();
     await flushLogger(logger);
     process.exit(0);
@@ -84,6 +99,7 @@ async function main(): Promise<void> {
     logger.fatal({ err: error }, 'Could not connect to Discord');
     stopPruning();
     await web?.close();
+    await jobRunner.stop();
     await bot.stop();
     process.exitCode = 1;
   }

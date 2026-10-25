@@ -1,5 +1,5 @@
 import type { HandlerContext } from '@/core/routing/definitions';
-import { parseDuration } from '@/core/time';
+import { nextTaskRun } from './next-run';
 
 type Awaitable<T> = T | Promise<T>;
 
@@ -59,6 +59,7 @@ export function task(
   run: TaskDefinition['run'],
 ): TaskDefinition {
   assertName('Task', name);
-  if ('every' in schedule) parseDuration(schedule.every);
+  // Throws now for a bad interval, cron expression or time zone.
+  nextTaskRun(schedule, new Date());
   return { type: 'task', name, schedule, run };
 }

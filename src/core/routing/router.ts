@@ -6,6 +6,7 @@ import {
   type RepliableInteraction,
 } from 'discord.js';
 import type { Database } from '@/core/database';
+import { createJobScheduler, type JobScheduler } from '@/core/jobs/scheduler';
 import type { Logger } from '@/core/logging';
 import type { UsageKind, UsageOutcome, UsageRecorder } from '@/core/usage';
 import type { ComponentKind, HandlerContext } from './definitions';
@@ -18,6 +19,8 @@ export interface RouterDeps {
   logger: Logger;
   /** Records one usage event per handled interaction; omit to disable stats. */
   usage?: UsageRecorder;
+  /** Defaults to a scheduler without a runner to wake. */
+  jobs?: JobScheduler;
 }
 
 const ERROR_MESSAGE = 'Something went wrong while handling that. The error has been logged.';
@@ -78,7 +81,7 @@ export function commandTarget(
  */
 export async function dispatchInteraction(
   interaction: Interaction,
-  { registry, db, logger, usage }: RouterDeps,
+  { registry, db, logger, usage, jobs = createJobScheduler(db, registry) }: RouterDeps,
 ): Promise<void> {
   const context = <Params>(feature: string, params: Params): HandlerContext<Params> => ({
     params,
@@ -87,6 +90,7 @@ export async function dispatchInteraction(
     client: interaction.client,
     registry,
     feature,
+    jobs,
   });
 
   let target: string;

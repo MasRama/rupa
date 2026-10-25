@@ -1,5 +1,6 @@
 import type { GatewayIntentBits } from 'discord.js';
 import type { Migration } from '@/core/database';
+import type { JobDefinition, TaskDefinition } from '@/core/jobs/definitions';
 import { CORE_SCHEMA_NAME } from '@/core/schema';
 import type { Settings } from '@/core/settings';
 import type { Guard } from '@/core/routing/guards';
@@ -28,6 +29,11 @@ export interface FeatureDefinition {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   events?: readonly EventDefinition<any>[];
   migrations?: readonly Migration[];
+  /** Work to schedule for later with `ctx.jobs.schedule`. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  jobs?: readonly JobDefinition<any>[];
+  /** Recurring work on an interval or a cron schedule. */
+  tasks?: readonly TaskDefinition[];
   /** Per-server settings, from `defineSettings`; editable in the dashboard. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings?: Settings<any>;
@@ -35,7 +41,8 @@ export interface FeatureDefinition {
   web?: WebHook;
 }
 
-type ListKeys = 'intents' | 'guards' | 'commands' | 'components' | 'events' | 'migrations';
+type ListKeys =
+  'intents' | 'guards' | 'commands' | 'components' | 'events' | 'migrations' | 'jobs' | 'tasks';
 
 export type Feature = {
   readonly name: string;
@@ -63,6 +70,8 @@ export function defineFeature(definition: FeatureDefinition): Feature {
     components: definition.components ?? [],
     events: definition.events ?? [],
     migrations: definition.migrations ?? [],
+    jobs: definition.jobs ?? [],
+    tasks: definition.tasks ?? [],
     settings: definition.settings ?? null,
     web: definition.web ?? null,
   });

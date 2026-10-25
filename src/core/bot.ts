@@ -1,5 +1,6 @@
 import { Client, Events } from 'discord.js';
 import type { Database } from '@/core/database';
+import { createJobScheduler, type JobScheduler } from '@/core/jobs/scheduler';
 import type { Logger } from '@/core/logging';
 import type { HandlerContext } from '@/core/routing/definitions';
 import type { FeatureRegistry } from '@/core/routing/registry';
@@ -12,6 +13,8 @@ export interface BotDeps {
   logger: Logger;
   /** Omit to turn usage statistics off. */
   usage?: UsageRecorder;
+  /** Shared by every handler as `ctx.jobs`; pass the one the job runner watches. */
+  jobs?: JobScheduler;
 }
 
 export interface Bot {
@@ -23,7 +26,13 @@ export interface Bot {
 }
 
 /** Wires a discord.js client to the mounted features. Does not connect yet. */
-export function createBot({ registry, db, logger, usage }: BotDeps): Bot {
+export function createBot({
+  registry,
+  db,
+  logger,
+  usage,
+  jobs = createJobScheduler(db, registry),
+}: BotDeps): Bot {
   const client = new Client({ intents: registry.intents() });
 
   client.once(Events.ClientReady, ready => {
@@ -34,7 +43,7 @@ export function createBot({ registry, db, logger, usage }: BotDeps): Bot {
   client.on(Events.InteractionCreate, interaction =>
     dispatchInteraction(
       interaction,
-      usage ? { registry, db, logger, usage } : { registry, db, logger },
+      usage ? { registry, db, logger, usage, jobs } : { registry, db, logger, jobs },
     ),
   );
 
@@ -46,6 +55,7 @@ export function createBot({ registry, db, logger, usage }: BotDeps): Bot {
       client,
       registry,
       feature,
+      jobs,
     };
     const listener = async (...args: unknown[]) => {
       try {

@@ -372,3 +372,15 @@ describe('guards', () => {
     );
   });
 });
+
+describe('scheduling from handlers', () => {
+  it('gives handlers ctx.jobs', async () => {
+    const execute = vi.fn();
+    const { deps } = setup(
+      defineFeature({ name: 'a', commands: [command({ data: slash('later'), execute })] }),
+    );
+    await dispatchInteraction(stubInteraction('command', 'later'), deps);
+    const ctx = execute.mock.calls[0]![1 as never] as { jobs: { schedule: unknown } };
+    expect(typeof ctx.jobs.schedule).toBe('function');
+  });
+});

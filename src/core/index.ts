@@ -21,6 +21,16 @@ export {
   type Guard,
   type GuardContext,
 } from './routing/guards';
+export {
+  job,
+  task,
+  type JobContext,
+  type JobDefinition,
+  type JobScheduler,
+  type ScheduleOptions,
+  type TaskDefinition,
+  type TaskSchedule,
+} from './jobs';
 export type { RouteParams } from './routing/pattern';
 export type { FeatureRegistry } from './routing/registry';
 export type { Database, Migration } from './database';

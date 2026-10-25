@@ -9,6 +9,7 @@ import type {
   RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from 'discord.js';
 import type { Database } from '@/core/database';
+import type { JobScheduler } from '@/core/jobs/scheduler';
 import type { Logger } from '@/core/logging';
 import { compilePattern, type CompiledPattern, type RouteParams } from './pattern';
 import type { Guard } from './guards';
@@ -27,6 +28,8 @@ export interface HandlerContext<Params = Record<string, never>> {
   registry: FeatureRegistry;
   /** Name of the feature that owns the handler. */
   feature: string;
+  /** Schedules and cancels jobs; see docs/jobs.md. */
+  jobs: JobScheduler;
 }
 
 /** Any slash command builder (with or without options or subcommands). */

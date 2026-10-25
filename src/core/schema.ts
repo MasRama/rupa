@@ -79,5 +79,34 @@ export const coreSchema: MigrationSource = {
         CREATE INDEX rupa_usage_events_guild_at ON rupa_usage_events (guild_id, at);
       `,
     },
+    {
+      id: '005_create_jobs',
+      up: `
+        CREATE TABLE rupa_jobs (
+          id         INTEGER PRIMARY KEY,
+          feature    TEXT NOT NULL,
+          name       TEXT NOT NULL,
+          key        TEXT,
+          payload    TEXT NOT NULL,
+          run_at     TEXT NOT NULL,
+          status     TEXT NOT NULL CHECK (status IN ('pending', 'running', 'failed')),
+          attempts   INTEGER NOT NULL DEFAULT 0,
+          last_error TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+        CREATE UNIQUE INDEX rupa_jobs_key ON rupa_jobs (feature, name, key) WHERE key IS NOT NULL;
+        CREATE INDEX rupa_jobs_due ON rupa_jobs (status, run_at);
+
+        CREATE TABLE rupa_tasks (
+          feature     TEXT NOT NULL,
+          name        TEXT NOT NULL,
+          schedule    TEXT NOT NULL,
+          next_run_at TEXT NOT NULL,
+          last_run_at TEXT,
+          PRIMARY KEY (feature, name)
+        );
+      `,
+    },
   ],
 };

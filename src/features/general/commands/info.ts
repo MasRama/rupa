@@ -22,7 +22,11 @@ export const infoCommand = command({
           value: ctx.registry.features.map(feature => feature.name).join(', ') || 'none',
           inline: true,
         },
-        { name: 'Commands', value: `${ctx.registry.commands.size}`, inline: true },
+        {
+          name: 'Commands',
+          value: `${ctx.registry.commands.size + ctx.registry.menus.length}`,
+          inline: true,
+        },
         {
           name: 'Runtime',
           value: `Node ${process.versions.node} · discord.js ${discordJsVersion}`,

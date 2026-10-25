@@ -90,7 +90,10 @@ export async function dispatchInteraction(
   }
 
   try {
-    logger.debug({ target, userId: interaction.user.id, guildId: interaction.guildId }, 'Interaction');
+    logger.debug(
+      { target, userId: interaction.user.id, guildId: interaction.guildId },
+      'Interaction',
+    );
     await run();
   } catch (error) {
     logger.error({ err: error, target }, 'Interaction handler failed');

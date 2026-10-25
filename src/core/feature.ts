@@ -24,7 +24,9 @@ export interface FeatureDefinition {
   migrations?: readonly Migration[];
 }
 
-export type Feature = { readonly [Key in keyof FeatureDefinition]-?: NonNullable<FeatureDefinition[Key]> };
+export type Feature = {
+  readonly [Key in keyof FeatureDefinition]-?: NonNullable<FeatureDefinition[Key]>;
+};
 
 const FEATURE_NAME = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 

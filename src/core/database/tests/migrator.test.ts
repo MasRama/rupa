@@ -17,9 +17,8 @@ const notes: MigrationSource = {
 };
 
 const tableExists = (db: ReturnType<typeof openDatabase>, name: string) =>
-  db
-    .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?")
-    .get(name) !== undefined;
+  db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(name) !==
+  undefined;
 
 describe('migrate', () => {
   it('applies pending migrations once, in order', () => {
@@ -53,9 +52,7 @@ describe('migrate', () => {
     expect(() => migrate(db, [broken])).toThrow(/broken\/002_fails/);
     expect(tableExists(db, 'ok_table')).toBe(true);
     expect(tableExists(db, 'half_table')).toBe(false);
-    expect(
-      migrationStatus(db, [broken]).map(row => [row.id, row.applied]),
-    ).toEqual([
+    expect(migrationStatus(db, [broken]).map(row => [row.id, row.applied])).toEqual([
       ['001_ok', true],
       ['002_fails', false],
     ]);

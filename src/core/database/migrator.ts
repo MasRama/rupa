@@ -36,9 +36,9 @@ function ensureTable(db: Database): void {
 }
 
 function appliedIds(db: Database, feature: string): Set<string> {
-  const rows = db
-    .prepare(`SELECT id FROM ${MIGRATIONS_TABLE} WHERE feature = ?`)
-    .all(feature) as { id: string }[];
+  const rows = db.prepare(`SELECT id FROM ${MIGRATIONS_TABLE} WHERE feature = ?`).all(feature) as {
+    id: string;
+  }[];
   return new Set(rows.map(row => row.id));
 }
 

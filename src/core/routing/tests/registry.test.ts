@@ -30,8 +30,14 @@ describe('createRegistry', () => {
   });
 
   it('throws when two features register the same command name', () => {
-    const a = defineFeature({ name: 'a', commands: [command({ data: slash('ban'), execute: noop })] });
-    const b = defineFeature({ name: 'b', commands: [command({ data: slash('ban'), execute: noop })] });
+    const a = defineFeature({
+      name: 'a',
+      commands: [command({ data: slash('ban'), execute: noop })],
+    });
+    const b = defineFeature({
+      name: 'b',
+      commands: [command({ data: slash('ban'), execute: noop })],
+    });
     expect(() => createRegistry([a, b])).toThrow(/"\/ban".*"a".*"b"/);
   });
 
@@ -71,7 +77,10 @@ describe('createRegistry', () => {
   it('always requests Guilds and adds feature intents without duplicates', () => {
     const registry = createRegistry([
       defineFeature({ name: 'a', intents: [GatewayIntentBits.GuildMembers] }),
-      defineFeature({ name: 'b', intents: [GatewayIntentBits.GuildMembers, GatewayIntentBits.Guilds] }),
+      defineFeature({
+        name: 'b',
+        intents: [GatewayIntentBits.GuildMembers, GatewayIntentBits.Guilds],
+      }),
     ]);
     expect(registry.intents()).toEqual([GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]);
   });

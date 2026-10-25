@@ -10,14 +10,11 @@
 /** Discord rejects custom ids longer than this. */
 export const MAX_CUSTOM_ID_LENGTH = 100;
 
-type ParamName<Segment extends string> = Segment extends `:${infer Name}`
-  ? Name
-  : never;
+type ParamName<Segment extends string> = Segment extends `:${infer Name}` ? Name : never;
 
-type ParamNames<Pattern extends string> =
-  Pattern extends `${infer Segment}/${infer Rest}`
-    ? ParamName<Segment> | ParamNames<Rest>
-    : ParamName<Pattern>;
+type ParamNames<Pattern extends string> = Pattern extends `${infer Segment}/${infer Rest}`
+  ? ParamName<Segment> | ParamNames<Rest>
+  : ParamName<Pattern>;
 
 /** Params object inferred from a pattern: `'a/:id'` → `{ id: string }`. */
 export type RouteParams<Pattern extends string> = {
@@ -32,9 +29,7 @@ export interface CompiledPattern<Pattern extends string> {
 
 type Segment = { kind: 'literal'; value: string } | { kind: 'param'; name: string };
 
-export function compilePattern<Pattern extends string>(
-  pattern: Pattern,
-): CompiledPattern<Pattern> {
+export function compilePattern<Pattern extends string>(pattern: Pattern): CompiledPattern<Pattern> {
   const seen = new Set<string>();
   const segments: Segment[] = pattern.split('/').map(raw => {
     if (raw === '') {
@@ -47,9 +42,7 @@ export function compilePattern<Pattern extends string>(
       throw new Error(`Invalid route pattern "${pattern}": unnamed param`);
     }
     if (seen.has(name)) {
-      throw new Error(
-        `Invalid route pattern "${pattern}": duplicate param "${name}"`,
-      );
+      throw new Error(`Invalid route pattern "${pattern}": duplicate param "${name}"`);
     }
     seen.add(name);
     return { kind: 'param', name };
@@ -65,9 +58,7 @@ export function compilePattern<Pattern extends string>(
           if (segment.kind === 'literal') return segment.value;
           const value = values[segment.name];
           if (value === undefined || value === '') {
-            throw new Error(
-              `Route "${pattern}" needs a value for param "${segment.name}"`,
-            );
+            throw new Error(`Route "${pattern}" needs a value for param "${segment.name}"`);
           }
           return encodeURIComponent(value);
         })

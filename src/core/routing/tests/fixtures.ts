@@ -25,11 +25,7 @@ type Kind = 'command' | 'autocomplete' | 'button' | 'select' | 'modal';
  * Minimal stand-in for a discord.js interaction: the type guards the router
  * uses, reply state, and reply/followUp spies. Not a Discord simulation.
  */
-export function stubInteraction(
-  kind: Kind,
-  key: string,
-  options: { failReply?: boolean } = {},
-) {
+export function stubInteraction(kind: Kind, key: string, options: { failReply?: boolean } = {}) {
   const interaction = {
     client: { user: { id: 'bot' } },
     user: { id: 'user-1' },

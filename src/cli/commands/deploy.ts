@@ -14,7 +14,10 @@ function resolveTarget(config: AppConfig, global: boolean): { rest: REST; target
   if (guildId && !global) {
     return {
       rest,
-      target: { route: Routes.applicationGuildCommands(clientId, guildId), label: `guild ${guildId}` },
+      target: {
+        route: Routes.applicationGuildCommands(clientId, guildId),
+        label: `guild ${guildId}`,
+      },
     };
   }
   return { rest, target: { route: Routes.applicationCommands(clientId), label: 'global scope' } };
@@ -57,7 +60,10 @@ export async function deployCommand(
   }
 }
 
-export async function clearCommands(config: AppConfig, options: { global: boolean }): Promise<void> {
+export async function clearCommands(
+  config: AppConfig,
+  options: { global: boolean },
+): Promise<void> {
   const { rest, target } = resolveTarget(config, options.global);
   await rest.put(target.route, { body: [] });
   console.log(`Removed every command from ${target.label}.`);

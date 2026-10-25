@@ -24,10 +24,7 @@ export function createBot({ registry, db, logger }: BotDeps): Bot {
   const client = new Client({ intents: registry.intents() });
 
   client.once(Events.ClientReady, ready => {
-    logger.info(
-      { user: ready.user.tag, guilds: ready.guilds.cache.size },
-      'Connected to Discord',
-    );
+    logger.info({ user: ready.user.tag, guilds: ready.guilds.cache.size }, 'Connected to Discord');
   });
   client.on(Events.Error, error => logger.error({ err: error }, 'Discord client error'));
   client.on(Events.Warn, warning => logger.warn({ warning }, 'Discord client warning'));

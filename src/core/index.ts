@@ -37,6 +37,15 @@ export {
   type TaskDefinition,
   type TaskSchedule,
 } from './jobs';
+export {
+  pages,
+  pageWindow,
+  type PageContent,
+  type PageInfo,
+  type PageMessage,
+  type Pages,
+  type PagesOptions,
+} from './routing/pages';
 export type { RouteParams } from './routing/pattern';
 export type { FeatureRegistry } from './routing/registry';
 export type { Database, Migration } from './database';

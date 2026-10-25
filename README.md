@@ -18,7 +18,7 @@ export const confirmBan = button('moderation:ban/:userId/:days', async (interact
 new ButtonBuilder().setCustomId(confirmBan.id({ userId: user.id, days: '1' }));
 
 // src/app/features.ts
-export const features: Feature[] = [general, moderation, guilds, stats, dashboard];
+export const features: Feature[] = [general, moderation, reminders, guilds, stats, dashboard];
 ```
 
 ## Why Rupa
@@ -28,6 +28,8 @@ export const features: Feature[] = [general, moderation, guilds, stats, dashboar
 - **Custom ids as typed routes.** You write `moderation:ban/:userId` once. Rupa builds the id (`confirmBan.id({ userId })`), parses it back into typed `ctx.params`, URI-encodes values and enforces Discord's 100-character limit. Two features claiming the same route fail at startup, not in production.
 - **Per-feature SQLite.** It uses `better-sqlite3` with plain SQL and no ORM. Each feature ships ordered migrations, and they run before the bot logs in.
 - **Explicit composition.** Nothing is discovered by file location. `src/app/features.ts` lists exactly what runs and in which order.
+- **Jobs that survive restarts.** Schedule work for later (`ctx.jobs.schedule(unban, payload, { in: '7d' })`) or on a schedule (`every: '1h'`, or cron with a time zone). It is stored in SQLite and retried with backoff when it fails.
+- **Guards before handlers.** Cooldowns and permission checks are declared next to the command, `guards: [cooldown('5s')]`, and refused interactions show up as blocked in the stats.
 - **Least privilege by default.** Only the `Guilds` intent is requested. A feature that needs more declares it.
 - **Deploys you can read first.** `npm run deploy:plan` shows which slash commands would be added, changed or removed before anything is sent to Discord.
 - **Usage stats built in.** The router records every handled command and component, so `npm run rupa -- stats` and `/stats` show what is actually used, per feature and per server. User ids are only stored if you opt in.
@@ -64,7 +66,8 @@ src/
 ├── cli/                   # npm run rupa -- <command>
 └── features/
     ├── general/           # /ping /info /help /userinfo /serverinfo
-    ├── moderation/        # /kick /ban /warn /clear /cases (+ buttons, modal, settings, SQLite)
+    ├── moderation/        # /kick /ban (temporary too) /warn /clear /cases (+ buttons, modal, settings, jobs)
+    ├── reminders/         # /remind, delivered later by a scheduled job
     ├── guilds/            # tracks servers the bot is in (events + SQLite)
     ├── stats/             # /stats for server managers
     └── dashboard/         # web pages, active when DASHBOARD_PORT is set
@@ -80,6 +83,7 @@ src/
 | `npm run deploy:plan` / `npm run deploy`           | Show / apply slash command changes |
 | `npm run migrate` / `npm run migrate:status`       | Apply / list migrations            |
 | `npm run rupa -- stats [--days 30] [--guild <id>]` | Show usage statistics              |
+| `npm run rupa -- jobs`                             | List scheduled and failed jobs     |
 | `npm run check`                                    | Typecheck, lint and test           |
 
 ## Documentation
@@ -87,6 +91,8 @@ src/
 - [Getting started](./docs/getting-started.md)
 - [Features](./docs/features.md)
 - [Interactions and routes](./docs/interactions.md)
+- [Guards and cooldowns](./docs/guards.md)
+- [Jobs and tasks](./docs/jobs.md)
 - [Database](./docs/database.md)
 - [CLI and deploying commands](./docs/cli.md)
 - [Usage statistics](./docs/stats.md)

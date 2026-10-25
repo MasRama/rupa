@@ -8,6 +8,7 @@ src/features/tickets/
 ├── commands/         # slash commands
 ├── components/       # buttons, select menus, modals
 ├── events/           # gateway event handlers
+├── jobs.ts           # scheduled and recurring work
 ├── repository.ts     # SQL for the feature's tables
 ├── migrations.ts     # the feature's schema history
 └── tests/
@@ -19,7 +20,7 @@ Only `index.ts` is public. Another feature may import what `index.ts` exports, b
 
 ```ts
 import { GatewayIntentBits } from 'discord.js';
-import { defineFeature } from '@/core';
+import { cooldown, defineFeature } from '@/core';
 
 export const tickets = defineFeature({
   name: 'tickets', // kebab-case and unique
@@ -27,6 +28,9 @@ export const tickets = defineFeature({
   commands: [openTicket, closeTicket],
   components: [closeButton, topicSelect, detailsModal],
   events: [memberLeft],
+  guards: [cooldown('3s')], // run before every command and component, see guards.md
+  jobs: [closeStale], // work scheduled for later, see jobs.md
+  tasks: [dailySummary], // recurring work, see jobs.md
   migrations,
   settings: ticketSettings, // per-server settings, see settings.md
   web: ticketPages, // dashboard pages, see dashboard.md
@@ -41,12 +45,20 @@ Every field except `name` is optional. The name `rupa` is reserved for core's ow
 // src/app/features.ts
 import { tickets } from '@/features/tickets';
 
-export const features: Feature[] = [general, moderation, guilds, stats, dashboard, tickets];
+export const features: Feature[] = [
+  general,
+  moderation,
+  reminders,
+  guilds,
+  stats,
+  dashboard,
+  tickets,
+];
 ```
 
 Order matters in three places. Migrations run in this order, component routes are matched in this order, and `/help` lists features in this order.
 
-At startup Rupa refuses to run if two features register the same slash command name, the same component route of the same kind, or the same feature name. The error names both features.
+At startup Rupa refuses to run if two features register the same slash command name, the same component route of the same kind, or the same feature name, or if a feature has two jobs or two tasks with the same name. The error names both features.
 
 ## Scaffolding
 
@@ -68,6 +80,7 @@ Every handler receives a context after its Discord arguments:
 | `ctx.client`   | The discord.js client                                                      |
 | `ctx.registry` | Everything mounted, e.g. for a help command                                |
 | `ctx.feature`  | The owning feature's name                                                  |
+| `ctx.jobs`     | Schedules and cancels jobs, see [jobs.md](./jobs.md)                       |
 
 ## Testing a feature
 

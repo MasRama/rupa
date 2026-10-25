@@ -8,11 +8,12 @@ Rupa's CLI runs through npm: `npm run rupa -- <command>`. The common commands al
 | `migrate`                         | `npm run migrate`        | no                        |
 | `migrate:status`                  | `npm run migrate:status` | no                        |
 | `stats [--days N] [--guild <id>]` |                          | no                        |
+| `jobs`                            |                          | no                        |
 | `deploy --plan`                   | `npm run deploy:plan`    | yes                       |
 | `deploy`                          | `npm run deploy`         | yes                       |
 | `commands:clear`                  |                          | yes                       |
 
-The CLI reads `.env` the same way the bot does. `migrate` applies core's own tables first, then each feature's. `stats` is described in [stats.md](./stats.md).
+The CLI reads `.env` the same way the bot does. `migrate` applies core's own tables first, then each feature's. `stats` is described in [stats.md](./stats.md), and `jobs`, which lists scheduled and failed jobs, in [jobs.md](./jobs.md).
 
 ## Deploying slash commands
 

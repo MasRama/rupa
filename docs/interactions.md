@@ -80,6 +80,10 @@ export const warmUp = event(Events.ClientReady, (client, ctx) => {}, { once: tru
 
 The context always comes last, after the event's own arguments. Remember to declare intents: `GuildMemberAdd` needs `GatewayIntentBits.GuildMembers` in the feature's `intents`, and that intent must also be enabled in the Developer Portal.
 
+## Guards
+
+Commands and components can declare `guards`: checks such as `cooldown('5s')` or `requirePermissions(...)` that run before the handler and refuse the interaction with a private message. See [guards.md](./guards.md).
+
 ## Errors
 
 If a handler throws, Rupa logs the error with the feature and target, and answers the user with an ephemeral message. It uses `reply` or `followUp` depending on whether you already replied or deferred. The bot keeps running. Errors in event handlers are logged the same way.

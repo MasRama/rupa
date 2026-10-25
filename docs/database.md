@@ -8,7 +8,7 @@ The connection enables `foreign_keys` and uses WAL journaling for file databases
 
 Each feature owns its tables and prefixes them with its name (`moderation_cases`, `tickets_messages`). Other features read them through the owning feature's exports, never with their own SQL.
 
-Core keeps its own tables under the `rupa_` prefix: `rupa_migrations`, `rupa_usage_events` ([stats.md](./stats.md)), `rupa_guild_settings` ([settings.md](./settings.md)) and `rupa_sessions` ([dashboard.md](./dashboard.md)). Their migrations run before any feature's. Do not write to them directly.
+Core keeps its own tables under the `rupa_` prefix: `rupa_migrations`, `rupa_usage_events` ([stats.md](./stats.md)), `rupa_guild_settings` ([settings.md](./settings.md)), `rupa_sessions` ([dashboard.md](./dashboard.md)), and `rupa_jobs` and `rupa_tasks` ([jobs.md](./jobs.md)). Their migrations run before any feature's. Do not write to them directly.
 
 ## Migrations
 

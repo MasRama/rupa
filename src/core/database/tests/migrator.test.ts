@@ -58,6 +58,16 @@ describe('migrate', () => {
     ]);
   });
 
+  it('rejects an async migration and does not record it', () => {
+    const db = openDatabase(':memory:');
+    const asyncSource: MigrationSource = {
+      name: 'async',
+      migrations: [{ id: '001_async', up: async () => undefined }],
+    };
+    expect(() => migrate(db, [asyncSource])).toThrow(/synchronous/);
+    expect(migrationStatus(db, [asyncSource])[0]?.applied).toBe(false);
+  });
+
   it('rejects duplicate migration ids in one feature', () => {
     const db = openDatabase(':memory:');
     const duplicated: MigrationSource = {

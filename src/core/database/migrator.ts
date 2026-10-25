@@ -72,8 +72,17 @@ export function migrate(db: Database, sources: readonly MigrationSource[]): { ap
 
       try {
         db.transaction(() => {
-          if (typeof migration.up === 'string') db.exec(migration.up);
-          else migration.up(db);
+          if (typeof migration.up === 'string') {
+            db.exec(migration.up);
+          } else {
+            // An async function compiles against `(db) => void` but would
+            // finish after the transaction commits.
+            const result: unknown = migration.up(db);
+            if (result instanceof Promise) {
+              result.catch(() => undefined);
+              throw new Error('migrations must be synchronous (better-sqlite3 is synchronous)');
+            }
+          }
           record.run(source.name, migration.id);
         })();
       } catch (error) {

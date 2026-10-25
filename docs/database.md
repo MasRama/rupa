@@ -36,6 +36,7 @@ export const migrations: Migration[] = [
 ```
 
 - Migrations are **forward-only** and run in array order. Once one has run anywhere, never edit it. Add a new one instead.
+- Function migrations must be synchronous, like better-sqlite3 itself. An `async` function is rejected.
 - Each migration runs in its own transaction. If it fails, nothing from it is kept, it is not recorded, and the bot does not start. The error names the feature and migration.
 - Applied migrations are recorded in `rupa_migrations (feature, id, applied_at)`.
 - They run automatically on every start, before the bot logs in. You can also run them by hand:

@@ -15,8 +15,7 @@ build/
 .env.test.local
 .env.production.local
 
-# Config files
-package-lock.json
+# Editor/agent tool state
 .qoder
 
 # Database
@@ -56,3 +55,5 @@ coverage/
 .Trashes
 ehthumbs.db
 Thumbs.db
+# Local agent workspace (specs, plans, ledgers)
+.superpowers/

@@ -61,18 +61,24 @@ export async function notifyMember(
   }
 }
 
-/** Posts a copy of a case to the server's log channel, if one is set and usable. */
+/**
+ * Posts an embed to the server's log channel, if one is set and usable.
+ * Returns whether it was posted.
+ */
 export async function postToLogChannel(
   guild: Guild,
   channelId: string | null,
   embed: EmbedBuilder,
   logger: Logger,
-): Promise<void> {
-  if (!channelId) return;
+): Promise<boolean> {
+  if (!channelId) return false;
   try {
     const channel = await guild.channels.fetch(channelId);
-    if (channel?.isSendable()) await channel.send({ embeds: [embed] });
+    if (!channel?.isSendable()) return false;
+    await channel.send({ embeds: [embed] });
+    return true;
   } catch (error) {
     logger.warn({ err: error, guildId: guild.id, channelId }, 'Could not post to the log channel');
+    return false;
   }
 }

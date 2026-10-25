@@ -1,9 +1,9 @@
 import { GatewayIntentBits } from 'discord.js';
 import { describe, expect, it } from 'vitest';
 import { defineFeature } from '@/core/feature';
-import { button, command, modal } from '../definitions';
+import { button, command, messageCommand, modal, userCommand } from '../definitions';
 import { createRegistry } from '../registry';
-import { slash } from './fixtures';
+import { messageMenu, slash, userMenu } from './fixtures';
 
 const noop = async () => undefined;
 
@@ -43,6 +43,43 @@ describe('createRegistry', () => {
       commands: [command({ data: slash('ban'), execute: noop })],
     });
     expect(() => createRegistry([a, b])).toThrow(/"\/ban".*"a".*"b"/);
+  });
+
+  it('keeps right-click menus apart from slash commands of the same name', () => {
+    const slashInfo = command({ data: slash('info'), execute: noop });
+    const userInfo = userCommand({ data: userMenu('info'), execute: noop });
+    const messageInfo = messageCommand({ data: messageMenu('info'), execute: noop });
+    const registry = createRegistry([
+      defineFeature({ name: 'a', commands: [slashInfo, userInfo, messageInfo] }),
+    ]);
+
+    expect(registry.commands.get('info')?.definition).toBe(slashInfo);
+    expect(registry.findMenu('user', 'info')).toEqual({
+      feature: 'a',
+      definition: userInfo,
+      guards: [],
+    });
+    expect(registry.findMenu('message', 'info')?.definition).toBe(messageInfo);
+    expect(registry.findMenu('user', 'nope')).toBeNull();
+    expect(registry.menus).toHaveLength(2);
+  });
+
+  it('throws when two features register the same menu', () => {
+    const menu = () => userCommand({ data: userMenu('Warn'), execute: noop });
+    const a = defineFeature({ name: 'a', commands: [menu()] });
+    const b = defineFeature({ name: 'b', commands: [menu()] });
+    expect(() => createRegistry([a, b])).toThrow(
+      'User command "Warn" is registered by both "a" and "b"',
+    );
+  });
+
+  it('refuses more right-click menus of one type than Discord allows', () => {
+    const menus = ['a', 'b', 'c', 'd', 'e', 'f'].map(name =>
+      messageCommand({ data: messageMenu(name), execute: noop }),
+    );
+    expect(() => createRegistry([defineFeature({ name: 'a', commands: menus })])).toThrow(
+      'Discord allows at most 5 message commands; found 6',
+    );
   });
 
   it('throws when two components of one kind share a pattern', () => {

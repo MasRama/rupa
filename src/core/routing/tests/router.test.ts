@@ -3,10 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { openDatabase } from '@/core/database';
 import type { UsageEvent } from '@/core/usage';
 import { defineFeature } from '@/core/feature';
-import { button, command, modal, select } from '../definitions';
+import { button, command, messageCommand, modal, select, userCommand } from '../definitions';
 import { createRegistry } from '../registry';
 import { dispatchInteraction } from '../router';
-import { slash, stubInteraction, stubLogger } from './fixtures';
+import { messageMenu, slash, stubInteraction, stubLogger, userMenu } from './fixtures';
 
 function setup(feature: ReturnType<typeof defineFeature>) {
   const registry = createRegistry([feature]);
@@ -41,6 +41,28 @@ describe('dispatchInteraction', () => {
     );
     await dispatchInteraction(stubInteraction('autocomplete', 'find'), deps);
     expect(autocomplete).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs right-click menus by type, apart from a slash command of the same name', async () => {
+    const onSlash = vi.fn(async () => undefined);
+    const onUser = vi.fn(async () => undefined);
+    const onMessage = vi.fn(async () => undefined);
+    const { deps } = setup(
+      defineFeature({
+        name: 'a',
+        commands: [
+          command({ data: slash('info'), execute: onSlash }),
+          userCommand({ data: userMenu('info'), execute: onUser }),
+          messageCommand({ data: messageMenu('info'), execute: onMessage }),
+        ],
+      }),
+    );
+    await dispatchInteraction(stubInteraction('user-menu', 'info'), deps);
+    await dispatchInteraction(stubInteraction('message-menu', 'info'), deps);
+    expect(onUser).toHaveBeenCalledTimes(1);
+    expect(onMessage).toHaveBeenCalledTimes(1);
+    expect(onSlash).not.toHaveBeenCalled();
+    expect(onUser.mock.calls[0]![1 as never]).toMatchObject({ feature: 'a', params: {} });
   });
 
   it('passes route params to a button handler', async () => {
@@ -275,6 +297,28 @@ describe('guards', () => {
       deps: { ...deps, usage: { record: (event: UsageEvent) => void events.push(event) } },
     };
   }
+
+  it('runs feature and menu guards before a right-click menu and records its target', async () => {
+    const execute = vi.fn();
+    const { deps, events } = recorded(
+      defineFeature({
+        name: 'a',
+        guards: [() => null],
+        commands: [
+          userCommand({ data: userMenu('Warn'), guards: [refuse('Not now.')], execute }),
+          messageCommand({ data: messageMenu('Report'), execute: vi.fn() }),
+        ],
+      }),
+    );
+    await dispatchInteraction(stubInteraction('user-menu', 'Warn'), deps);
+    await dispatchInteraction(stubInteraction('message-menu', 'Report'), deps);
+
+    expect(execute).not.toHaveBeenCalled();
+    expect(events).toEqual([
+      expect.objectContaining({ kind: 'command', target: 'Warn (user menu)', outcome: 'blocked' }),
+      expect.objectContaining({ kind: 'command', target: 'Report (message menu)', outcome: 'ok' }),
+    ]);
+  });
 
   it('answers a refusal privately, skips the handler and records it as blocked', async () => {
     const execute = vi.fn();

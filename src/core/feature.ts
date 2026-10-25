@@ -6,7 +6,7 @@ import type { Settings } from '@/core/settings';
 import type { Guard } from '@/core/routing/guards';
 import type { WebHook } from '@/core/web/types';
 import type {
-  CommandDefinition,
+  AnyCommandDefinition,
   ComponentDefinition,
   EventDefinition,
 } from '@/core/routing/definitions';
@@ -22,7 +22,8 @@ export interface FeatureDefinition {
   intents?: readonly GatewayIntentBits[];
   /** Checks run before every command and component of this feature, before their own. */
   guards?: readonly Guard[];
-  commands?: readonly CommandDefinition[];
+  /** Slash commands and right-click (user and message) commands. */
+  commands?: readonly AnyCommandDefinition[];
   // `any` keeps each component's own pattern-typed params assignable here.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   components?: readonly ComponentDefinition<any, any>[];

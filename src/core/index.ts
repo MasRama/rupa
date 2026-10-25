@@ -7,12 +7,18 @@ export {
   button,
   command,
   event,
+  messageCommand,
   modal,
   select,
+  userCommand,
+  type AnyCommandDefinition,
   type CommandDefinition,
   type ComponentDefinition,
   type EventDefinition,
   type HandlerContext,
+  type MenuCommandDefinition,
+  type MessageCommandDefinition,
+  type UserCommandDefinition,
 } from './routing/definitions';
 export {
   cooldown,

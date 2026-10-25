@@ -5,8 +5,11 @@ import type {
   ChatInputCommandInteraction,
   Client,
   ClientEvents,
+  MessageContextMenuCommandInteraction,
   ModalSubmitInteraction,
   RESTPostAPIChatInputApplicationCommandsJSONBody,
+  RESTPostAPIContextMenuApplicationCommandsJSONBody,
+  UserContextMenuCommandInteraction,
 } from 'discord.js';
 import type { Database } from '@/core/database';
 import type { JobScheduler } from '@/core/jobs/scheduler';
@@ -49,6 +52,49 @@ export interface CommandDefinition {
 
 export function command(definition: Omit<CommandDefinition, 'type'>): CommandDefinition {
   return { type: 'command', ...definition };
+}
+
+/** A `ContextMenuCommandBuilder`; its type is set by `userCommand` or `messageCommand`. */
+export interface MenuData {
+  readonly name: string;
+  toJSON(): RESTPostAPIContextMenuApplicationCommandsJSONBody;
+}
+
+interface MenuInteractions {
+  user: UserContextMenuCommandInteraction;
+  message: MessageContextMenuCommandInteraction;
+}
+
+export type MenuType = keyof MenuInteractions;
+
+/** A right-click command, shown under Apps when right-clicking a user or a message. */
+export interface MenuCommandDefinition<Type extends MenuType = MenuType> {
+  readonly type: `${Type}-command`;
+  readonly data: MenuData;
+  /** Checks run before `execute`, after the feature's own guards. */
+  readonly guards?: readonly Guard[];
+  execute(interaction: MenuInteractions[Type], ctx: HandlerContext): Awaitable<void>;
+}
+
+export type UserCommandDefinition = MenuCommandDefinition<'user'>;
+export type MessageCommandDefinition = MenuCommandDefinition<'message'>;
+
+/** Anything a feature can list in `commands`. */
+export type AnyCommandDefinition =
+  CommandDefinition | UserCommandDefinition | MessageCommandDefinition;
+
+/** Right-click a user → Apps → this command. `interaction.targetUser` is who was clicked. */
+export function userCommand(
+  definition: Omit<UserCommandDefinition, 'type'>,
+): UserCommandDefinition {
+  return { type: 'user-command', ...definition };
+}
+
+/** Right-click a message → Apps → this command. `interaction.targetMessage` is the message. */
+export function messageCommand(
+  definition: Omit<MessageCommandDefinition, 'type'>,
+): MessageCommandDefinition {
+  return { type: 'message-command', ...definition };
 }
 
 interface ComponentInteractions {

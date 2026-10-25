@@ -11,8 +11,9 @@ export const helpCommand = command({
 
     // Grouped by the feature that provides them, in mount order.
     for (const feature of ctx.registry.features) {
-      if (feature.commands.length === 0) continue;
-      const lines = feature.commands.map(({ data }) => {
+      const slashCommands = feature.commands.filter(definition => definition.type === 'command');
+      if (slashCommands.length === 0) continue;
+      const lines = slashCommands.map(({ data }) => {
         const { description } = data.toJSON();
         return `\`/${data.name}\` ${description}`;
       });

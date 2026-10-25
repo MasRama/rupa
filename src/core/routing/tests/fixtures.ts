@@ -1,4 +1,10 @@
-import { PermissionsBitField, SlashCommandBuilder, type Interaction } from 'discord.js';
+import {
+  ApplicationCommandType,
+  ContextMenuCommandBuilder,
+  PermissionsBitField,
+  SlashCommandBuilder,
+  type Interaction,
+} from 'discord.js';
 import { vi } from 'vitest';
 import type { Logger } from '@/core/logging';
 
@@ -19,7 +25,14 @@ export function stubLogger() {
 export const slash = (name: string) =>
   new SlashCommandBuilder().setName(name).setDescription(`${name} command`);
 
-type Kind = 'command' | 'autocomplete' | 'button' | 'select' | 'modal';
+export const userMenu = (name: string) =>
+  new ContextMenuCommandBuilder().setName(name).setType(ApplicationCommandType.User);
+
+export const messageMenu = (name: string) =>
+  new ContextMenuCommandBuilder().setName(name).setType(ApplicationCommandType.Message);
+
+type Kind =
+  'command' | 'autocomplete' | 'user-menu' | 'message-menu' | 'button' | 'select' | 'modal';
 
 /**
  * Minimal stand-in for a discord.js interaction: the type guards the router
@@ -41,6 +54,7 @@ export function stubInteraction(
     appPermissions?: bigint[];
   } = {},
 ) {
+  const isCommand = ['command', 'autocomplete', 'user-menu', 'message-menu'].includes(kind);
   const interaction = {
     client: { user: { id: 'bot' } },
     user: { id: options.userId ?? 'user-1' },
@@ -51,8 +65,8 @@ export function stubInteraction(
         ? null
         : new PermissionsBitField(options.memberPermissions ?? PermissionsBitField.All),
     appPermissions: new PermissionsBitField(options.appPermissions ?? PermissionsBitField.All),
-    commandName: kind === 'command' || kind === 'autocomplete' ? key : undefined,
-    customId: kind === 'command' || kind === 'autocomplete' ? undefined : key,
+    commandName: isCommand ? key : undefined,
+    customId: isCommand ? undefined : key,
     options: {
       getSubcommandGroup: () => options.group ?? null,
       getSubcommand: () => options.subcommand ?? null,
@@ -62,6 +76,8 @@ export function stubInteraction(
     responded: false,
     isChatInputCommand: () => kind === 'command',
     isAutocomplete: () => kind === 'autocomplete',
+    isUserContextMenuCommand: () => kind === 'user-menu',
+    isMessageContextMenuCommand: () => kind === 'message-menu',
     isButton: () => kind === 'button',
     isAnySelectMenu: () => kind === 'select',
     isModalSubmit: () => kind === 'modal',

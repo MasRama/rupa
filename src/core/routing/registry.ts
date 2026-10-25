@@ -6,6 +6,8 @@ import type {
   ComponentDefinition,
   ComponentKind,
   EventDefinition,
+  MenuCommandDefinition,
+  MenuType,
 } from './definitions';
 import type { Guard } from './guards';
 
@@ -15,6 +17,16 @@ export interface RegisteredCommand {
   /** The feature's guards, then the command's own. */
   guards: readonly Guard[];
 }
+
+export interface RegisteredMenu<Type extends MenuType = MenuType> {
+  feature: string;
+  definition: MenuCommandDefinition<Type>;
+  /** The feature's guards, then the menu's own. */
+  guards: readonly Guard[];
+}
+
+/** Discord's limit per scope for each kind of right-click command. */
+const MAX_MENUS = 5;
 
 export interface MatchedComponent {
   feature: string;
@@ -40,7 +52,11 @@ type AnyJob = JobDefinition<any>;
 /** Everything the mounted features provide, indexed and checked for conflicts. */
 export interface FeatureRegistry {
   readonly features: readonly Feature[];
+  /** Slash commands by name. */
   readonly commands: ReadonlyMap<string, RegisteredCommand>;
+  /** Right-click commands, in mount order. */
+  readonly menus: readonly RegisteredMenu[];
+  findMenu<Type extends MenuType>(type: Type, name: string): RegisteredMenu<Type> | null;
   readonly events: readonly RegisteredEvent[];
   readonly tasks: readonly RegisteredTask[];
   /** Name of the feature that mounts this job, or null. */
@@ -55,6 +71,7 @@ export interface FeatureRegistry {
 export function createRegistry(features: readonly Feature[]): FeatureRegistry {
   const featureNames = new Set<string>();
   const commands = new Map<string, RegisteredCommand>();
+  const menus: RegisteredMenu[] = [];
   const components: Omit<MatchedComponent, 'params'>[] = [];
   const componentOwners = new Map<string, string>();
   const events: RegisteredEvent[] = [];
@@ -69,6 +86,26 @@ export function createRegistry(features: readonly Feature[]): FeatureRegistry {
     featureNames.add(feature.name);
 
     for (const definition of feature.commands) {
+      if (definition.type !== 'command') {
+        const type = definition.type === 'user-command' ? 'user' : 'message';
+        const owner = menus.find(
+          menu =>
+            menu.definition.type === definition.type &&
+            menu.definition.data.name === definition.data.name,
+        );
+        if (owner) {
+          const label = type === 'user' ? 'User' : 'Message';
+          throw new Error(
+            `${label} command "${definition.data.name}" is registered by both "${owner.feature}" and "${feature.name}"`,
+          );
+        }
+        menus.push({
+          feature: feature.name,
+          definition,
+          guards: [...feature.guards, ...(definition.guards ?? [])],
+        });
+        continue;
+      }
       const name = definition.data.name;
       const owner = commands.get(name);
       if (owner) {
@@ -126,11 +163,26 @@ export function createRegistry(features: readonly Feature[]): FeatureRegistry {
     }
   }
 
+  for (const type of ['user', 'message'] as const) {
+    const count = menus.filter(menu => menu.definition.type === `${type}-command`).length;
+    if (count > MAX_MENUS) {
+      throw new Error(`Discord allows at most ${MAX_MENUS} ${type} commands; found ${count}`);
+    }
+  }
+
   return {
     features,
     commands,
+    menus,
     events,
     tasks,
+
+    findMenu<Type extends MenuType>(type: Type, name: string) {
+      const found = menus.find(
+        menu => menu.definition.type === `${type}-command` && menu.definition.data.name === name,
+      );
+      return (found as RegisteredMenu<Type> | undefined) ?? null;
+    },
 
     jobOwner: job => jobOwners.get(job) ?? null,
     findJob: (feature, name) => jobsByName.get(`${feature}/${name}`) ?? null,

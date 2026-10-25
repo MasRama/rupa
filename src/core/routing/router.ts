@@ -9,9 +9,9 @@ import type { Database } from '@/core/database';
 import { createJobScheduler, type JobScheduler } from '@/core/jobs/scheduler';
 import type { Logger } from '@/core/logging';
 import type { UsageKind, UsageOutcome, UsageRecorder } from '@/core/usage';
-import type { ComponentKind, HandlerContext } from './definitions';
+import type { ComponentKind, HandlerContext, MenuType } from './definitions';
 import type { Guard } from './guards';
-import type { FeatureRegistry } from './registry';
+import type { FeatureRegistry, RegisteredMenu } from './registry';
 
 export interface RouterDeps {
   registry: FeatureRegistry;
@@ -75,6 +75,9 @@ export function commandTarget(
     .join(' ');
 }
 
+/** How a right-click command is named in logs and usage stats, e.g. `Warn (user menu)`. */
+export const menuTarget = (type: MenuType, name: string) => `${name} (${type} menu)`;
+
 /**
  * Sends an interaction to the feature handler that owns it. Handler errors are
  * logged and answered with an ephemeral message; this function never rejects.
@@ -116,6 +119,17 @@ export async function dispatchInteraction(
       } else {
         run = () => interaction.respond([]);
       }
+    }
+  } else if (interaction.isUserContextMenuCommand() || interaction.isMessageContextMenuCommand()) {
+    const type = interaction.isUserContextMenuCommand() ? 'user' : 'message';
+    target = menuTarget(type, interaction.commandName);
+    const registered = registry.findMenu(type, interaction.commandName);
+    if (registered) {
+      const ctx = context(registered.feature, {} as Record<string, never>);
+      const { definition } = registered as RegisteredMenu;
+      run = () => definition.execute(interaction as never, ctx);
+      tracked = { feature: registered.feature, kind: 'command', target };
+      guards = registered.guards;
     }
   } else {
     const kind = componentKind(interaction);

@@ -2,6 +2,7 @@ import type { GatewayIntentBits } from 'discord.js';
 import type { Migration } from '@/core/database';
 import { CORE_SCHEMA_NAME } from '@/core/schema';
 import type { Settings } from '@/core/settings';
+import type { Guard } from '@/core/routing/guards';
 import type { WebHook } from '@/core/web/types';
 import type {
   CommandDefinition,
@@ -18,6 +19,8 @@ export interface FeatureDefinition {
   name: string;
   /** Gateway intents this feature needs beyond `Guilds`. */
   intents?: readonly GatewayIntentBits[];
+  /** Checks run before every command and component of this feature, before their own. */
+  guards?: readonly Guard[];
   commands?: readonly CommandDefinition[];
   // `any` keeps each component's own pattern-typed params assignable here.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -32,7 +35,7 @@ export interface FeatureDefinition {
   web?: WebHook;
 }
 
-type ListKeys = 'intents' | 'commands' | 'components' | 'events' | 'migrations';
+type ListKeys = 'intents' | 'guards' | 'commands' | 'components' | 'events' | 'migrations';
 
 export type Feature = {
   readonly name: string;
@@ -55,6 +58,7 @@ export function defineFeature(definition: FeatureDefinition): Feature {
   return Object.freeze({
     name: definition.name,
     intents: definition.intents ?? [],
+    guards: definition.guards ?? [],
     commands: definition.commands ?? [],
     components: definition.components ?? [],
     events: definition.events ?? [],

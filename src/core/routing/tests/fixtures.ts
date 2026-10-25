@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, type Interaction } from 'discord.js';
+import { PermissionsBitField, SlashCommandBuilder, type Interaction } from 'discord.js';
 import { vi } from 'vitest';
 import type { Logger } from '@/core/logging';
 
@@ -28,12 +28,29 @@ type Kind = 'command' | 'autocomplete' | 'button' | 'select' | 'modal';
 export function stubInteraction(
   kind: Kind,
   key: string,
-  options: { failReply?: boolean; group?: string; subcommand?: string } = {},
+  options: {
+    failReply?: boolean;
+    group?: string;
+    subcommand?: string;
+    userId?: string;
+    channelId?: string | null;
+    guildId?: string | null;
+    /** Permissions of the member; `null` outside a server. Defaults to all. */
+    memberPermissions?: bigint[] | null;
+    /** Permissions of the bot in the channel. Defaults to all. */
+    appPermissions?: bigint[];
+  } = {},
 ) {
   const interaction = {
     client: { user: { id: 'bot' } },
-    user: { id: 'user-1' },
-    guildId: 'guild-1',
+    user: { id: options.userId ?? 'user-1' },
+    guildId: options.guildId === undefined ? 'guild-1' : options.guildId,
+    channelId: options.channelId === undefined ? 'channel-1' : options.channelId,
+    memberPermissions:
+      options.memberPermissions === null
+        ? null
+        : new PermissionsBitField(options.memberPermissions ?? PermissionsBitField.All),
+    appPermissions: new PermissionsBitField(options.appPermissions ?? PermissionsBitField.All),
     commandName: kind === 'command' || kind === 'autocomplete' ? key : undefined,
     customId: kind === 'command' || kind === 'autocomplete' ? undefined : key,
     options: {

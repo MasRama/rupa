@@ -263,3 +263,112 @@ describe('usage recording', () => {
     expect(logger.warn).toHaveBeenCalled();
   });
 });
+
+describe('guards', () => {
+  const refuse = (message: string) => () => message;
+
+  function recorded(feature: ReturnType<typeof defineFeature>) {
+    const events: UsageEvent[] = [];
+    const { deps } = setup(feature);
+    return {
+      events,
+      deps: { ...deps, usage: { record: (event: UsageEvent) => void events.push(event) } },
+    };
+  }
+
+  it('answers a refusal privately, skips the handler and records it as blocked', async () => {
+    const execute = vi.fn();
+    const { deps, events } = recorded(
+      defineFeature({
+        name: 'a',
+        commands: [command({ data: slash('daily'), guards: [refuse('Not yet.')], execute })],
+      }),
+    );
+    const interaction = stubInteraction('command', 'daily');
+    await dispatchInteraction(interaction, deps);
+
+    expect(execute).not.toHaveBeenCalled();
+    expect(interaction.reply).toHaveBeenCalledWith({
+      content: 'Not yet.',
+      flags: MessageFlags.Ephemeral,
+    });
+    expect(events).toEqual([
+      expect.objectContaining({ target: '/daily', outcome: 'blocked', durationMs: 0 }),
+    ]);
+  });
+
+  it('runs feature guards before the command guards, then the handler', async () => {
+    const order: string[] = [];
+    const { deps } = setup(
+      defineFeature({
+        name: 'a',
+        guards: [() => (order.push('feature'), null)],
+        commands: [
+          command({
+            data: slash('daily'),
+            guards: [() => (order.push('command'), null)],
+            execute: () => void order.push('handler'),
+          }),
+        ],
+      }),
+    );
+    await dispatchInteraction(stubInteraction('command', 'daily'), deps);
+    expect(order).toEqual(['feature', 'command', 'handler']);
+  });
+
+  it('gives component guards the route params and pattern', async () => {
+    const guard = vi.fn(() => null);
+    const { deps } = setup(
+      defineFeature({
+        name: 'a',
+        components: [button('a:claim/:id', vi.fn(), { guards: [guard] })],
+      }),
+    );
+    await dispatchInteraction(stubInteraction('button', 'a:claim/7'), deps);
+    expect(guard.mock.calls[0]![1 as never]).toMatchObject({
+      params: { id: '7' },
+      target: 'a:claim/:id',
+      feature: 'a',
+    });
+  });
+
+  it('does not run guards for autocomplete', async () => {
+    const guard = vi.fn(() => 'No.');
+    const autocomplete = vi.fn();
+    const { deps } = setup(
+      defineFeature({
+        name: 'a',
+        guards: [guard],
+        commands: [command({ data: slash('find'), execute: vi.fn(), autocomplete })],
+      }),
+    );
+    await dispatchInteraction(stubInteraction('autocomplete', 'find'), deps);
+    expect(guard).not.toHaveBeenCalled();
+    expect(autocomplete).toHaveBeenCalled();
+  });
+
+  it('treats a guard that throws like a failing handler', async () => {
+    const { deps, events } = recorded(
+      defineFeature({
+        name: 'a',
+        commands: [
+          command({
+            data: slash('daily'),
+            guards: [
+              () => {
+                throw new Error('guard broke');
+              },
+            ],
+            execute: vi.fn(),
+          }),
+        ],
+      }),
+    );
+    const interaction = stubInteraction('command', 'daily');
+    await dispatchInteraction(interaction, deps);
+    expect(events[0]?.outcome).toBe('error');
+    expect(interaction.reply).toHaveBeenCalledWith(
+      expect.objectContaining({ content: expect.stringContaining('Something went wrong') }),
+    );
+  });
+});

@@ -14,6 +14,13 @@ export {
   type EventDefinition,
   type HandlerContext,
 } from './routing/definitions';
+export {
+  cooldown,
+  requireBotPermissions,
+  requirePermissions,
+  type Guard,
+  type GuardContext,
+} from './routing/guards';
 export type { RouteParams } from './routing/pattern';
 export type { FeatureRegistry } from './routing/registry';
 export type { Database, Migration } from './database';

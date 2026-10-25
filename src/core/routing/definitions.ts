@@ -11,6 +11,7 @@ import type {
 import type { Database } from '@/core/database';
 import type { Logger } from '@/core/logging';
 import { compilePattern, type CompiledPattern, type RouteParams } from './pattern';
+import type { Guard } from './guards';
 import type { FeatureRegistry } from './registry';
 
 type Awaitable<T> = T | Promise<T>;
@@ -37,6 +38,8 @@ export interface CommandData {
 export interface CommandDefinition {
   readonly type: 'command';
   readonly data: CommandData;
+  /** Checks run before `execute`, after the feature's own guards. */
+  readonly guards?: readonly Guard[];
   execute(interaction: ChatInputCommandInteraction, ctx: HandlerContext): Awaitable<void>;
   autocomplete?(interaction: AutocompleteInteraction, ctx: HandlerContext): Awaitable<void>;
 }
@@ -64,6 +67,8 @@ export interface ComponentDefinition<
   readonly type: 'component';
   readonly kind: Kind;
   readonly route: CompiledPattern<Pattern>;
+  /** Checks run before `handle`, after the feature's own guards. */
+  readonly guards: readonly Guard[];
   handle(
     interaction: ComponentInteractions[Kind],
     ctx: HandlerContext<RouteParams<Pattern>>,
@@ -72,16 +77,22 @@ export interface ComponentDefinition<
   id(...args: IdArgs<Pattern>): string;
 }
 
+export interface ComponentOptions {
+  guards?: readonly Guard[];
+}
+
 function component<Kind extends ComponentKind, Pattern extends string>(
   kind: Kind,
   pattern: Pattern,
   handle: ComponentDefinition<Kind, Pattern>['handle'],
+  options: ComponentOptions,
 ): ComponentDefinition<Kind, Pattern> {
   const route = compilePattern(pattern);
   return {
     type: 'component',
     kind,
     route,
+    guards: options.guards ?? [],
     handle,
     id: (...args) => route.build((args[0] ?? {}) as RouteParams<Pattern>),
   };
@@ -90,18 +101,21 @@ function component<Kind extends ComponentKind, Pattern extends string>(
 export const button = <Pattern extends string>(
   pattern: Pattern,
   handle: ComponentDefinition<'button', Pattern>['handle'],
-) => component('button', pattern, handle);
+  options: ComponentOptions = {},
+) => component('button', pattern, handle, options);
 
 /** Any select menu: string, user, role, mentionable or channel. */
 export const select = <Pattern extends string>(
   pattern: Pattern,
   handle: ComponentDefinition<'select', Pattern>['handle'],
-) => component('select', pattern, handle);
+  options: ComponentOptions = {},
+) => component('select', pattern, handle, options);
 
 export const modal = <Pattern extends string>(
   pattern: Pattern,
   handle: ComponentDefinition<'modal', Pattern>['handle'],
-) => component('modal', pattern, handle);
+  options: ComponentOptions = {},
+) => component('modal', pattern, handle, options);
 
 export interface EventDefinition<Name extends keyof ClientEvents = keyof ClientEvents> {
   readonly type: 'event';

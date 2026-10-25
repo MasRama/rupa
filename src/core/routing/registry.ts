@@ -6,16 +6,21 @@ import type {
   ComponentKind,
   EventDefinition,
 } from './definitions';
+import type { Guard } from './guards';
 
 export interface RegisteredCommand {
   feature: string;
   definition: CommandDefinition;
+  /** The feature's guards, then the command's own. */
+  guards: readonly Guard[];
 }
 
 export interface MatchedComponent {
   feature: string;
   definition: ComponentDefinition;
   params: Record<string, string>;
+  /** The feature's guards, then the component's own. */
+  guards: readonly Guard[];
 }
 
 export interface RegisteredEvent {
@@ -37,7 +42,7 @@ export interface FeatureRegistry {
 export function createRegistry(features: readonly Feature[]): FeatureRegistry {
   const featureNames = new Set<string>();
   const commands = new Map<string, RegisteredCommand>();
-  const components: { feature: string; definition: ComponentDefinition }[] = [];
+  const components: Omit<MatchedComponent, 'params'>[] = [];
   const componentOwners = new Map<string, string>();
   const events: RegisteredEvent[] = [];
 
@@ -55,7 +60,11 @@ export function createRegistry(features: readonly Feature[]): FeatureRegistry {
           `Command "/${name}" is registered by both "${owner.feature}" and "${feature.name}"`,
         );
       }
-      commands.set(name, { feature: feature.name, definition });
+      commands.set(name, {
+        feature: feature.name,
+        definition,
+        guards: [...feature.guards, ...(definition.guards ?? [])],
+      });
     }
 
     for (const definition of feature.components) {
@@ -65,7 +74,11 @@ export function createRegistry(features: readonly Feature[]): FeatureRegistry {
         throw new Error(`Component ${key} is registered by both "${owner}" and "${feature.name}"`);
       }
       componentOwners.set(key, feature.name);
-      components.push({ feature: feature.name, definition });
+      components.push({
+        feature: feature.name,
+        definition,
+        guards: [...feature.guards, ...definition.guards],
+      });
     }
 
     for (const definition of feature.events) {
@@ -79,10 +92,10 @@ export function createRegistry(features: readonly Feature[]): FeatureRegistry {
     events,
 
     findComponent(kind, customId) {
-      for (const { feature, definition } of components) {
-        if (definition.kind !== kind) continue;
-        const params = definition.route.match(customId);
-        if (params) return { feature, definition, params };
+      for (const entry of components) {
+        if (entry.definition.kind !== kind) continue;
+        const params = entry.definition.route.match(customId);
+        if (params) return { ...entry, params };
       }
       return null;
     },

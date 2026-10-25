@@ -7,8 +7,9 @@ import {
 } from 'discord.js';
 import type { Database } from '@/core/database';
 import type { Logger } from '@/core/logging';
-import type { UsageKind, UsageRecorder } from '@/core/usage';
+import type { UsageKind, UsageOutcome, UsageRecorder } from '@/core/usage';
 import type { ComponentKind, HandlerContext } from './definitions';
+import type { Guard } from './guards';
 import type { FeatureRegistry } from './registry';
 
 export interface RouterDeps {
@@ -46,6 +47,18 @@ async function replyEphemeral(
   }
 }
 
+async function firstRefusal(
+  guards: readonly Guard[],
+  interaction: RepliableInteraction,
+  ctx: Parameters<Guard>[1],
+): Promise<string | null> {
+  for (const guard of guards) {
+    const refusal = await guard(interaction, ctx);
+    if (refusal !== null) return refusal;
+  }
+  return null;
+}
+
 /** `/command`, plus the subcommand group and subcommand when present. */
 export function commandTarget(
   interaction: ChatInputCommandInteraction | AutocompleteInteraction,
@@ -80,6 +93,8 @@ export async function dispatchInteraction(
   let run: (() => Promise<void> | void) | null = null;
   // What to record once the handler settles; autocomplete stays null.
   let tracked: { feature: string; kind: UsageKind; target: string } | null = null;
+  let guards: readonly Guard[] = [];
+  let params: Record<string, string> = {};
 
   if (interaction.isChatInputCommand() || interaction.isAutocomplete()) {
     target = commandTarget(interaction);
@@ -90,6 +105,7 @@ export async function dispatchInteraction(
       if (interaction.isChatInputCommand()) {
         run = () => definition.execute(interaction, ctx);
         tracked = { feature: registered.feature, kind: 'command', target };
+        guards = registered.guards;
       } else if (definition.autocomplete) {
         const autocomplete = definition.autocomplete.bind(definition);
         run = () => autocomplete(interaction, ctx);
@@ -106,6 +122,8 @@ export async function dispatchInteraction(
       const ctx = context(match.feature, match.params as never);
       run = () => match.definition.handle(interaction as never, ctx);
       tracked = { feature: match.feature, kind, target: match.definition.route.pattern };
+      guards = match.guards;
+      params = match.params;
     }
   }
 
@@ -117,15 +135,28 @@ export async function dispatchInteraction(
 
   const at = new Date();
   const startedAt = performance.now();
-  let outcome: 'ok' | 'error' = 'ok';
+  let outcome: UsageOutcome = 'ok';
   let durationMs: number;
   try {
     logger.debug(
       { target, userId: interaction.user.id, guildId: interaction.guildId },
       'Interaction',
     );
-    await run();
-    durationMs = performance.now() - startedAt;
+    const refusal =
+      tracked && interaction.isRepliable()
+        ? await firstRefusal(guards, interaction, {
+            ...context(tracked.feature, params),
+            target: tracked.target,
+          })
+        : null;
+    if (refusal !== null) {
+      outcome = 'blocked';
+      durationMs = 0;
+      await replyEphemeral(interaction as RepliableInteraction, refusal, logger);
+    } else {
+      await run();
+      durationMs = performance.now() - startedAt;
+    }
   } catch (error) {
     durationMs = performance.now() - startedAt;
     outcome = 'error';

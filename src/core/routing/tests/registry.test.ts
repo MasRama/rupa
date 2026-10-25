@@ -26,7 +26,11 @@ describe('createRegistry', () => {
   it('indexes commands by name with their feature', () => {
     const ping = command({ data: slash('ping'), execute: noop });
     const registry = createRegistry([defineFeature({ name: 'general', commands: [ping] })]);
-    expect(registry.commands.get('ping')).toEqual({ feature: 'general', definition: ping });
+    expect(registry.commands.get('ping')).toEqual({
+      feature: 'general',
+      definition: ping,
+      guards: [],
+    });
   });
 
   it('throws when two features register the same command name', () => {
@@ -68,6 +72,7 @@ describe('createRegistry', () => {
     expect(registry.findComponent('button', 'moderation:ban/42')).toEqual({
       feature: 'moderation',
       definition: confirm,
+      guards: [],
       params: { userId: '42' },
     });
     expect(registry.findComponent('modal', 'moderation:ban/42')).toBeNull();

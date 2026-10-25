@@ -61,14 +61,14 @@ export function createCaseRepository(db: Database) {
     },
 
     /** A member's cases in one guild, newest first. */
-    listForMember(guildId: string, userId: string, limit = 10): ModerationCase[] {
+    listForMember(guildId: string, userId: string, limit = 10, offset = 0): ModerationCase[] {
       const rows = db
         .prepare(
           `SELECT * FROM moderation_cases
            WHERE guild_id = ? AND user_id = ?
-           ORDER BY id DESC LIMIT ?`,
+           ORDER BY id DESC LIMIT ? OFFSET ?`,
         )
-        .all(guildId, userId, limit) as CaseRow[];
+        .all(guildId, userId, limit, offset) as CaseRow[];
       return rows.map(toCase);
     },
 

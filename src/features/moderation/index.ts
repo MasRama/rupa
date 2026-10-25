@@ -1,6 +1,6 @@
 import { defineFeature } from '@/core';
 import { banCommand } from './commands/ban';
-import { casesCommand } from './commands/cases';
+import { casePages, casesCommand } from './commands/cases';
 import { clearCommand } from './commands/clear';
 import { kickCommand } from './commands/kick';
 import { reportMenu } from './commands/report';
@@ -13,7 +13,7 @@ import { moderationSettings } from './settings';
 
 /**
  * Kick, ban (with confirmation, optionally temporary), warn (with a reason modal,
- * also from a right-click), clear, case history and message reports.
+ * also from a right-click), clear, paginated case history and message reports.
  */
 export const moderation = defineFeature({
   name: 'moderation',
@@ -26,7 +26,7 @@ export const moderation = defineFeature({
     warnMenu,
     reportMenu,
   ],
-  components: [confirmBan, cancelBan, warnReason],
+  components: [confirmBan, cancelBan, warnReason, casePages],
   migrations,
   jobs: [unban],
   settings: moderationSettings,

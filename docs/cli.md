@@ -26,12 +26,13 @@ npm run deploy:plan
 ```text
 Command plan for guild 123456789012345678:
   + /tickets
+  + [message] Report message
   ~ /ban
   - /oldcommand
   8 unchanged
 ```
 
-The plan compares your commands with what Discord currently has. It ignores fields Discord fills in itself, so an unchanged command shows as unchanged. `npm run deploy` prints the same plan and then applies it in one bulk overwrite. If nothing changed, it sends nothing.
+The plan compares your commands with what Discord currently has, including right-click commands (`[user] …` and `[message] …`). It ignores fields Discord fills in itself, so an unchanged command shows as unchanged. `npm run deploy` prints the same plan and then applies it in one bulk overwrite. If nothing changed, it sends nothing.
 
 **Scope.** When `DISCORD_GUILD_ID` is set, commands go to that server only and appear instantly. That is ideal for development. Pass `--global` (`npm run deploy -- --global`), or unset `DISCORD_GUILD_ID`, to deploy globally for production.
 

@@ -27,6 +27,8 @@ npm run deploy:plan  # needs DISCORD_TOKEN / DISCORD_CLIENT_ID in .env
 - Only `GatewayIntentBits.Guilds` by default. A feature that needs more declares `intents`.
 - Core owns the `rupa_*` tables through the reserved migration source `rupa` (`src/core/schema.ts`). Features never touch them directly; use the usage, settings and web APIs from `@/core`.
 - Per-server configuration goes through `defineSettings` and the feature's `settings` option, not a feature-made table.
+- Right-click commands are `userCommand` / `messageCommand` in the feature's `commands`. A command that is user-installable must work without a cached guild (no `interaction.guild`, no channel access).
+- Long lists use `pages()` from `@/core`, not hand-built page buttons or collectors.
 - Checks that run before a handler (cooldowns, member or bot permissions) are guards (`guards: [...]` on the command, component or feature), not ad-hoc code at the top of `execute`.
 - Delayed or recurring work is a `job` or `task` mounted on the feature and scheduled with `ctx.jobs`, never `setTimeout`. Jobs run at least once, so make them idempotent: reload state by id and check the work is still needed.
 - Dashboard pages are added with a feature's `web` hook and guarded with `requireUser`, `requireGuildManager` or `requireOwner`. Never trust ids from a form without checking they belong to that server.

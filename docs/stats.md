@@ -6,16 +6,16 @@ Rupa records how often each feature, slash command and component is used. The ro
 
 One row per handled interaction, written after the handler finishes, or right away when a [guard](./guards.md) refuses it:
 
-| Field      | Example                                                                                       |
-| ---------- | --------------------------------------------------------------------------------------------- |
-| time (UTC) | `2026-10-25T09:14:03.120Z`                                                                    |
-| feature    | `moderation`                                                                                  |
-| kind       | `command`, `button`, `select` or `modal`                                                      |
-| target     | `/ticket admin close`, or a component's route such as `moderation:ban/:userId/:days/:seconds` |
-| server id  | `null` in DMs                                                                                 |
-| user id    | `null` unless `STATS_TRACK_USERS=true`                                                        |
-| outcome    | `ok`, `error` when the handler threw, or `blocked` when a guard refused it                    |
-| duration   | how long the handler took, in milliseconds                                                    |
+| Field      | Example                                                                                                           |
+| ---------- | ----------------------------------------------------------------------------------------------------------------- |
+| time (UTC) | `2026-10-25T09:14:03.120Z`                                                                                        |
+| feature    | `moderation`                                                                                                      |
+| kind       | `command`, `button`, `select` or `modal`                                                                          |
+| target     | `/ticket admin close`, `Warn (user menu)`, or a component's route such as `moderation:ban/:userId/:days/:seconds` |
+| server id  | `null` in DMs                                                                                                     |
+| user id    | `null` unless `STATS_TRACK_USERS=true`                                                                            |
+| outcome    | `ok`, `error` when the handler threw, or `blocked` when a guard refused it                                        |
+| duration   | how long the handler took, in milliseconds                                                                        |
 
 Blocked interactions are counted apart: they are not uses or errors, and they do not affect the average time.
 

@@ -5,7 +5,7 @@ A feature is one capability of the bot (moderation, tickets, leveling) kept in o
 ```text
 src/features/tickets/
 ├── index.ts          # defineFeature(...): the feature's public boundary
-├── commands/         # slash commands
+├── commands/         # slash and right-click commands
 ├── components/       # buttons, select menus, modals
 ├── events/           # gateway event handlers
 ├── jobs.ts           # scheduled and recurring work
@@ -25,7 +25,7 @@ import { cooldown, defineFeature } from '@/core';
 export const tickets = defineFeature({
   name: 'tickets', // kebab-case and unique
   intents: [GatewayIntentBits.GuildMembers], // only if you need more than Guilds
-  commands: [openTicket, closeTicket],
+  commands: [openTicket, closeTicket, reportTicketMenu], // slash and right-click commands
   components: [closeButton, topicSelect, detailsModal],
   events: [memberLeft],
   guards: [cooldown('3s')], // run before every command and component, see guards.md

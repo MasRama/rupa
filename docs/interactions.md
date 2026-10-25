@@ -1,6 +1,6 @@
 # Interactions and routes
 
-Everything a user can trigger is declared with one of five helpers from `@/core`.
+Everything a user can trigger is declared with a helper from `@/core`: `command`, `userCommand` and `messageCommand` ([context-menus.md](./context-menus.md)), `button`, `select` and `modal`, and `event`. Long lists can use `pages` ([pagination.md](./pagination.md)).
 
 ## Slash commands
 

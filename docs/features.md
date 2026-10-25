@@ -28,10 +28,12 @@ export const tickets = defineFeature({
   components: [closeButton, topicSelect, detailsModal],
   events: [memberLeft],
   migrations,
+  settings: ticketSettings, // per-server settings, see settings.md
+  web: ticketPages, // dashboard pages, see dashboard.md
 });
 ```
 
-Every list is optional.
+Every field except `name` is optional. The name `rupa` is reserved for core's own tables.
 
 ## Mounting it
 
@@ -39,7 +41,7 @@ Every list is optional.
 // src/app/features.ts
 import { tickets } from '@/features/tickets';
 
-export const features: Feature[] = [general, moderation, guilds, tickets];
+export const features: Feature[] = [general, moderation, guilds, stats, dashboard, tickets];
 ```
 
 Order matters in three places. Migrations run in this order, component routes are matched in this order, and `/help` lists features in this order.
@@ -58,14 +60,14 @@ This creates `index.ts`, a `/tickets` command, an empty `migrations.ts` and a te
 
 Every handler receives a context after its Discord arguments:
 
-| Field | What it is |
-| --- | --- |
-| `ctx.params` | Values captured from the component's route (empty for commands and events) |
-| `ctx.db` | The shared `better-sqlite3` database |
-| `ctx.logger` | A pino logger tagged with the feature name |
-| `ctx.client` | The discord.js client |
-| `ctx.registry` | Everything mounted, e.g. for a help command |
-| `ctx.feature` | The owning feature's name |
+| Field          | What it is                                                                 |
+| -------------- | -------------------------------------------------------------------------- |
+| `ctx.params`   | Values captured from the component's route (empty for commands and events) |
+| `ctx.db`       | The shared `better-sqlite3` database                                       |
+| `ctx.logger`   | A pino logger tagged with the feature name                                 |
+| `ctx.client`   | The discord.js client                                                      |
+| `ctx.registry` | Everything mounted, e.g. for a help command                                |
+| `ctx.feature`  | The owning feature's name                                                  |
 
 ## Testing a feature
 

@@ -18,7 +18,7 @@ export const confirmBan = button('moderation:ban/:userId/:days', async (interact
 new ButtonBuilder().setCustomId(confirmBan.id({ userId: user.id, days: '1' }));
 
 // src/app/features.ts
-export const features: Feature[] = [general, moderation, guilds];
+export const features: Feature[] = [general, moderation, guilds, stats, dashboard];
 ```
 
 ## Why Rupa
@@ -30,6 +30,9 @@ export const features: Feature[] = [general, moderation, guilds];
 - **Explicit composition.** Nothing is discovered by file location. `src/app/features.ts` lists exactly what runs and in which order.
 - **Least privilege by default.** Only the `Guilds` intent is requested. A feature that needs more declares it.
 - **Deploys you can read first.** `npm run deploy:plan` shows which slash commands would be added, changed or removed before anything is sent to Discord.
+- **Usage stats built in.** The router records every handled command and component, so `npm run rupa -- stats` and `/stats` show what is actually used, per feature and per server. User ids are only stored if you opt in.
+- **Per-server settings.** `defineSettings` gives a feature typed, validated settings that each server sets for itself.
+- **An optional dashboard.** Set `DASHBOARD_PORT` and server managers sign in with Discord to see their server's usage and edit settings. It is server-rendered and runs in the bot process.
 
 Rupa follows the same ideas as [Nara](https://github.com/MasRama/nara), the author's feature-first web application kit.
 
@@ -61,20 +64,23 @@ src/
 ├── cli/                   # npm run rupa -- <command>
 └── features/
     ├── general/           # /ping /info /help /userinfo /serverinfo
-    ├── moderation/        # /kick /ban /warn /clear /cases (+ buttons, modal, SQLite)
-    └── guilds/            # tracks servers the bot is in (events + SQLite)
+    ├── moderation/        # /kick /ban /warn /clear /cases (+ buttons, modal, settings, SQLite)
+    ├── guilds/            # tracks servers the bot is in (events + SQLite)
+    ├── stats/             # /stats for server managers
+    └── dashboard/         # web pages, active when DASHBOARD_PORT is set
 ```
 
 ## Commands
 
-| Script | What it does |
-| --- | --- |
-| `npm run dev` | Run the bot with reload on save |
-| `npm run build` / `npm start` | Compile to `dist/` and run it |
-| `npm run rupa -- make feature <name>` | Scaffold `src/features/<name>` |
-| `npm run deploy:plan` / `npm run deploy` | Show / apply slash command changes |
-| `npm run migrate` / `npm run migrate:status` | Apply / list feature migrations |
-| `npm run check` | Typecheck, lint and test |
+| Script                                             | What it does                       |
+| -------------------------------------------------- | ---------------------------------- |
+| `npm run dev`                                      | Run the bot with reload on save    |
+| `npm run build` / `npm start`                      | Compile to `dist/` and run it      |
+| `npm run rupa -- make feature <name>`              | Scaffold `src/features/<name>`     |
+| `npm run deploy:plan` / `npm run deploy`           | Show / apply slash command changes |
+| `npm run migrate` / `npm run migrate:status`       | Apply / list migrations            |
+| `npm run rupa -- stats [--days 30] [--guild <id>]` | Show usage statistics              |
+| `npm run check`                                    | Typecheck, lint and test           |
 
 ## Documentation
 
@@ -83,6 +89,10 @@ src/
 - [Interactions and routes](./docs/interactions.md)
 - [Database](./docs/database.md)
 - [CLI and deploying commands](./docs/cli.md)
+- [Usage statistics](./docs/stats.md)
+- [Server settings](./docs/settings.md)
+- [Dashboard](./docs/dashboard.md)
+- [Upgrading from 0.1.0](./docs/upgrading.md)
 
 ## Status
 

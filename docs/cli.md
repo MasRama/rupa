@@ -2,16 +2,17 @@
 
 Rupa's CLI runs through npm: `npm run rupa -- <command>`. The common commands also have their own scripts.
 
-| Command | Script | Needs Discord credentials |
-| --- | --- | --- |
-| `make feature <name>` | | no |
-| `migrate` | `npm run migrate` | no |
-| `migrate:status` | `npm run migrate:status` | no |
-| `deploy --plan` | `npm run deploy:plan` | yes |
-| `deploy` | `npm run deploy` | yes |
-| `commands:clear` | | yes |
+| Command                           | Script                   | Needs Discord credentials |
+| --------------------------------- | ------------------------ | ------------------------- |
+| `make feature <name>`             |                          | no                        |
+| `migrate`                         | `npm run migrate`        | no                        |
+| `migrate:status`                  | `npm run migrate:status` | no                        |
+| `stats [--days N] [--guild <id>]` |                          | no                        |
+| `deploy --plan`                   | `npm run deploy:plan`    | yes                       |
+| `deploy`                          | `npm run deploy`         | yes                       |
+| `commands:clear`                  |                          | yes                       |
 
-The CLI reads `.env` the same way the bot does.
+The CLI reads `.env` the same way the bot does. `migrate` applies core's own tables first, then each feature's. `stats` is described in [stats.md](./stats.md).
 
 ## Deploying slash commands
 

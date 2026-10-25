@@ -64,3 +64,5 @@ NODE_ENV=production npm start
 With `NODE_ENV=production`, logs are JSON lines (pino) instead of pretty output. Migrations run on every start before the bot logs in, so a deploy only needs the new build and a restart. For global commands, unset `DISCORD_GUILD_ID` and run `npm run deploy`. Global changes can take a while to reach every client.
 
 Use any process manager (systemd, pm2, Docker). The database is the single file at `DATABASE_PATH`, so back that file up.
+
+To give server managers a web dashboard, see [dashboard.md](./dashboard.md). Usage statistics are on by default, see [stats.md](./stats.md).

@@ -1,6 +1,7 @@
 import type { GatewayIntentBits } from 'discord.js';
 import type { Migration } from '@/core/database';
 import { CORE_SCHEMA_NAME } from '@/core/schema';
+import type { Settings } from '@/core/settings';
 import type {
   CommandDefinition,
   ComponentDefinition,
@@ -23,10 +24,19 @@ export interface FeatureDefinition {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   events?: readonly EventDefinition<any>[];
   migrations?: readonly Migration[];
+  /** Per-server settings, from `defineSettings`; editable in the dashboard. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  settings?: Settings<any>;
 }
 
+type ListKeys = 'intents' | 'commands' | 'components' | 'events' | 'migrations';
+
 export type Feature = {
-  readonly [Key in keyof FeatureDefinition]-?: NonNullable<FeatureDefinition[Key]>;
+  readonly name: string;
+} & {
+  readonly [Key in ListKeys]-?: NonNullable<FeatureDefinition[Key]>;
+} & {
+  readonly settings: Settings | null;
 };
 
 const FEATURE_NAME = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
@@ -45,5 +55,6 @@ export function defineFeature(definition: FeatureDefinition): Feature {
     components: definition.components ?? [],
     events: definition.events ?? [],
     migrations: definition.migrations ?? [],
+    settings: definition.settings ?? null,
   });
 }

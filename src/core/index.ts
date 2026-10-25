@@ -19,6 +19,13 @@ export type { FeatureRegistry } from './routing/registry';
 export type { Database, Migration } from './database';
 export type { Logger } from './logging';
 export {
+  defineSettings,
+  setting,
+  type SettingDefinition,
+  type Settings,
+  type SettingValues,
+} from './settings';
+export {
   createUsageQueries,
   sparkline,
   usageWindow,

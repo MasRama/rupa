@@ -25,5 +25,19 @@ export const coreSchema: MigrationSource = {
         CREATE INDEX rupa_usage_events_guild_at ON rupa_usage_events (guild_id, at);
       `,
     },
+    {
+      id: '002_create_guild_settings',
+      up: `
+        CREATE TABLE rupa_guild_settings (
+          guild_id   TEXT NOT NULL,
+          feature    TEXT NOT NULL,
+          key        TEXT NOT NULL,
+          value      TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          updated_by TEXT NOT NULL,
+          PRIMARY KEY (guild_id, feature, key)
+        );
+      `,
+    },
   ],
 };

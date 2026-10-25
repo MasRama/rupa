@@ -18,10 +18,12 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "verbatimModuleSyntax": false,
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts", "vitest.config.mts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vitest.config.mts"],
   "exclude": ["node_modules", "dist"]
 }

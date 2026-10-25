@@ -1,329 +1,63 @@
-# Contributing to Discord Bot Starter Project
+# Contributing to Rupa
 
-Thank you for your interest in contributing to this Discord bot starter project! This document provides guidelines and information for contributors.
+Thanks for helping. This guide covers how to set up the project, what a good change looks like, and how releases happen.
 
-## 🤝 How to Contribute
+## Setup
 
-### Reporting Issues
-
-1. **Check existing issues** first to avoid duplicates
-2. **Use the issue template** if available
-3. **Provide detailed information** including:
-   - Bot version
-   - Node.js version
-   - Operating system
-   - Steps to reproduce
-   - Expected vs actual behavior
-   - Error messages or logs
-
-### Suggesting Features
-
-1. **Open an issue** with the "feature request" label
-2. **Describe the feature** in detail
-3. **Explain the use case** and benefits
-4. **Consider implementation impact** on existing code
-
-### Code Contributions
-
-1. **Fork the repository**
-2. **Create a feature branch** from `main`
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. **Make your changes** following the coding standards
-4. **Write or update tests** if applicable
-5. **Update documentation** as needed
-6. **Run linting and tests**
-   ```bash
-   npm run lint
-   npm run format
-   ```
-7. **Commit your changes** with clear messages
-8. **Push to your fork** and create a pull request
-
-## 📝 Coding Standards
-
-### TypeScript Guidelines
-
-- Use **strict TypeScript** with proper type annotations
-- Prefer **interfaces over types** for object definitions
-- Use **meaningful variable and function names**
-- Add **JSDoc comments** for public methods
-- Follow **camelCase** for variables and functions
-- Follow **PascalCase** for classes and interfaces
-
-### Code Style
-
-- Use **2 spaces** for indentation
-- Use **single quotes** for strings
-- Add **trailing commas** in arrays and objects
-- Keep **line length under 80 characters** when reasonable
-- Use **async/await** instead of promises chains
-
-### Architecture Patterns
-
-- Follow **singleton pattern** for services
-- Use **dependency injection** where appropriate
-- Implement **proper error handling** with try-catch blocks
-- Use **logger service** instead of console.log
-- Follow **separation of concerns** principle
-
-### Database Guidelines
-
-- Use **migrations** for schema changes
-- Write **reversible migrations** with up/down methods
-- Use **repository pattern** for data access
-- Validate **input data** before database operations
-- Use **transactions** for multiple related operations
-
-### Command Development
-
-```typescript
-// Good example
-export const exampleCommand: ICommand = {
-  data: new SlashCommandBuilder()
-    .setName('example')
-    .setDescription('A well-documented example command')
-    .addStringOption(option =>
-      option.setName('input')
-        .setDescription('Example input parameter')
-        .setRequired(true)
-    ),
-
-  async execute(interaction: CommandInteraction): Promise<void> {
-    try {
-      const input = interaction.options.getString('input', true);
-      
-      // Validate input
-      if (!isValidInput(input)) {
-        await interaction.reply({
-          content: '❌ Invalid input provided.',
-          ephemeral: true,
-        });
-        return;
-      }
-
-      // Process command
-      const result = await processInput(input);
-
-      // Send response
-      await interaction.reply({
-        content: `✅ Result: ${result}`,
-      });
-
-      // Log command execution
-      logger.logCommand(
-        interaction.commandName,
-        interaction.user.id,
-        interaction.guildId || undefined
-      );
-
-    } catch (error) {
-      logger.error(`Error in ${interaction.commandName} command`, error);
-      
-      const errorMessage = '❌ An error occurred while executing this command.';
-      
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({ content: errorMessage, ephemeral: true });
-      } else {
-        await interaction.reply({ content: errorMessage, ephemeral: true });
-      }
-    }
-  },
-};
-```
-
-## 🧪 Testing Guidelines
-
-### Manual Testing
-
-1. **Test in development environment** first
-2. **Use a test Discord server** for validation
-3. **Test edge cases** and error conditions
-4. **Verify permissions** and role hierarchy
-5. **Test with different user types** (admin, member, bot)
-
-### Code Quality Checks
+You need Node.js 22.12 or newer.
 
 ```bash
-# Run all quality checks
-npm run lint          # Check for linting errors
-npm run lint:fix      # Auto-fix linting issues
-npm run format        # Format code with Prettier
-npm run build         # Ensure TypeScript compiles
+git clone https://github.com/MasRama/rupa.git
+cd rupa
+npm install
+cp .env.example .env   # only needed to run the bot or deploy commands
+npm run check          # typecheck, lint, format check, tests
 ```
 
-## 📚 Documentation Standards
+Most work needs no Discord credentials. Tests run against in-memory SQLite and do not talk to Discord.
 
-### Code Documentation
+## Where things go
 
-- Add **JSDoc comments** for all public methods
-- Include **parameter descriptions** and return types
-- Document **complex logic** with inline comments
-- Use **clear variable names** that don't need comments
+- `src/core/`: Rupa itself (routing, registry, database, config, deploy planning). It must stay business-neutral and must not import from `src/features/`.
+- `src/features/<name>/`: the example features. One capability per folder; other code imports only its `index.ts`.
+- `src/app/`: composition (`features.ts`) and the entrypoint.
+- `src/cli/`: the `rupa` command.
+- `docs/`: user-facing guides. Update them in the same pull request as the behavior they describe.
 
-### README Updates
+[AGENTS.md](./AGENTS.md) has the full set of conventions in one place.
 
-- Update **feature lists** when adding new functionality
-- Add **new commands** to the commands section
-- Update **installation steps** if dependencies change
-- Include **examples** for new features
+## Making a change
 
-### Changelog
+1. For anything bigger than a small fix, open an issue first so we can agree on the approach.
+2. Branch from `main`.
+3. Write a failing test, then make it pass. Pure logic (routing, SQL, permission rules, formatting) is always tested. Handlers that only call Discord APIs may stay untested, as long as their logic lives in tested functions.
+4. Run `npm run check` and `npm run build`.
+5. Open a pull request and fill in the template.
 
-- Follow **Keep a Changelog** format
-- Use **semantic versioning** for releases
-- Group changes by **Added, Changed, Deprecated, Removed, Fixed, Security**
-- Include **dates** for all releases
+## Commit messages
 
-## 🔄 Pull Request Process
+Rupa uses [Conventional Commits](https://www.conventionalcommits.org/). Releases and the changelog are generated from them, so the type matters:
 
-### Before Submitting
+| Type | Use for | Release effect (pre-1.0) |
+| --- | --- | --- |
+| `feat` | New user-facing capability | minor |
+| `fix` | Bug fix | patch |
+| `perf`, `refactor`, `docs`, `test`, `build`, `ci`, `chore`, `style` | Everything else | none on its own |
 
-1. **Rebase your branch** on the latest main
-2. **Run all quality checks** locally
-3. **Test your changes** thoroughly
-4. **Update documentation** as needed
-5. **Write clear commit messages**
+Add a scope when it helps (`feat(routing): ...`, `fix(moderation): ...`). Describe what changed and why in the body. Mark breaking changes with `!` (`feat(core)!: ...`) and a `BREAKING CHANGE:` footer.
 
-### PR Requirements
+## Code style
 
-- **Clear title** describing the change
-- **Detailed description** of what was changed and why
-- **Link to related issues** if applicable
-- **Screenshots** for UI changes
-- **Breaking changes** clearly marked
+- TypeScript strict mode. Avoid `any`; if you need it, leave a comment explaining why.
+- Prettier formats `src/` (`npm run format`). ESLint must pass.
+- Ephemeral replies use `flags: MessageFlags.Ephemeral`.
+- Component custom ids are routes defined with `button()`, `select()` or `modal()`. Build them with `.id()`, never by hand.
+- SQL lives in a feature's repository module; tables are prefixed with the feature name.
 
-### Review Process
+## Releases
 
-1. **Automated checks** must pass
-2. **Code review** by maintainers
-3. **Testing** in development environment
-4. **Documentation review** if applicable
-5. **Final approval** before merge
+Maintainers do not tag releases by hand. On every push to `main`, [release-please](https://github.com/googleapis/release-please) opens or updates a release pull request with the next version and changelog. Merging that pull request creates the tag and GitHub release.
 
-## 🐛 Bug Fix Guidelines
+## Code of conduct
 
-### Identifying Bugs
-
-1. **Reproduce the issue** consistently
-2. **Identify root cause** through debugging
-3. **Consider edge cases** that might be affected
-4. **Check for similar issues** elsewhere
-
-### Fixing Process
-
-1. **Write a test** that reproduces the bug
-2. **Implement the fix** with minimal changes
-3. **Verify the test passes** with the fix
-4. **Test related functionality** for regressions
-5. **Update documentation** if behavior changes
-
-## 🚀 Feature Development
-
-### Planning
-
-1. **Discuss the feature** in an issue first
-2. **Consider backwards compatibility**
-3. **Plan the API design** carefully
-4. **Identify integration points**
-
-### Implementation
-
-1. **Start with interfaces** and type definitions
-2. **Implement core functionality** first
-3. **Add error handling** and validation
-4. **Write comprehensive tests**
-5. **Add logging** and monitoring
-
-### Documentation
-
-1. **Update README** with new features
-2. **Add code examples** for usage
-3. **Document configuration** options
-4. **Update changelog** with changes
-
-## 📋 Commit Message Guidelines
-
-Use the conventional commit format:
-
-```
-type(scope): description
-
-[optional body]
-
-[optional footer]
-```
-
-### Types
-
-- **feat**: New feature
-- **fix**: Bug fix
-- **docs**: Documentation changes
-- **style**: Code style changes (formatting, etc.)
-- **refactor**: Code refactoring
-- **test**: Adding or updating tests
-- **chore**: Maintenance tasks
-
-### Examples
-
-```
-feat(commands): add timeout command for temporary bans
-
-Add a new /timeout command that allows moderators to temporarily
-restrict a user's ability to send messages.
-
-Closes #123
-```
-
-```
-fix(database): resolve connection pool exhaustion
-
-Fix issue where database connections weren't being properly released
-after failed transactions, leading to pool exhaustion.
-
-Fixes #456
-```
-
-## 🤖 Bot-Specific Guidelines
-
-### Discord API Best Practices
-
-- **Respect rate limits** in all implementations
-- **Handle API errors** gracefully
-- **Use appropriate intents** only
-- **Validate permissions** before actions
-- **Cache data** when appropriate
-
-### Security Considerations
-
-- **Validate all user input**
-- **Use parameterized queries** for database operations
-- **Don't log sensitive information**
-- **Implement proper permission checks**
-- **Sanitize user-generated content**
-
-### Performance Guidelines
-
-- **Use database indexes** for frequently queried fields
-- **Implement pagination** for large data sets
-- **Cache frequently accessed data**
-- **Optimize database queries**
-- **Use batch operations** when possible
-
-## 📞 Getting Help
-
-- **Discord Server**: [Your Discord Server Link]
-- **GitHub Issues**: For bug reports and feature requests
-- **GitHub Discussions**: For questions and general discussion
-- **Documentation**: Check README and code comments first
-
-## 🎉 Recognition
-
-Contributors will be recognized in:
-
-- **README.md** contributors section
-- **GitHub releases** changelog
-- **Project documentation**
-
-Thank you for contributing to making this Discord bot starter project better! 🚀
+This project follows the [Contributor Covenant](./CODE_OF_CONDUCT.md). By taking part you agree to uphold it.

@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest an improvement to Rupa's core, CLI or example features
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is hard or impossible today? Describe the bot you are building.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: How you would like it to work. An API sketch helps.
+      render: ts
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

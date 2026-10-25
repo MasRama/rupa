@@ -1,7 +1,7 @@
 import { createBot } from '@/core/bot';
 import { ConfigError, loadConfig, loadEnvFile, requireDiscordCredentials } from '@/core/config';
 import { migrate, openDatabase } from '@/core/database';
-import { createLogger } from '@/core/logging';
+import { createLogger, flushLogger } from '@/core/logging';
 import { createRegistry } from '@/core/routing/registry';
 import { coreSchema } from '@/core/schema';
 import { createUsageRecorder, scheduleUsagePruning } from '@/core/usage';
@@ -65,6 +65,7 @@ async function main(): Promise<void> {
     stopPruning();
     await web?.close();
     await bot.stop();
+    await flushLogger(logger);
     process.exit(0);
   };
   process.once('SIGINT', shutdown);

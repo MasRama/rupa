@@ -24,3 +24,8 @@ export function createLogger({ level, pretty }: LoggerOptions): Logger {
     }),
   });
 }
+
+/** Writes out buffered log lines; call before `process.exit` so the last lines are not lost. */
+export function flushLogger(logger: Pick<Logger, 'flush'>): Promise<void> {
+  return new Promise(resolve => logger.flush(() => resolve()));
+}

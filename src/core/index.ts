@@ -18,6 +18,7 @@ export type { RouteParams } from './routing/pattern';
 export type { FeatureRegistry } from './routing/registry';
 export type { Database, Migration } from './database';
 export type { Logger } from './logging';
+export { formatDuration, parseDuration } from './time';
 export {
   defineSettings,
   formValue,

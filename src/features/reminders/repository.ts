@@ -65,10 +65,13 @@ export function createReminderRepository(db: Database) {
     },
 
     /** A user's reminders, soonest first. */
-    listForUser(userId: string): Reminder[] {
+    listForUser(userId: string, limit = -1, offset = 0): Reminder[] {
       const rows = db
-        .prepare(`SELECT ${COLUMNS} FROM reminders_items WHERE user_id = ? ORDER BY remind_at, id`)
-        .all(userId) as ReminderRow[];
+        .prepare(
+          `SELECT ${COLUMNS} FROM reminders_items WHERE user_id = ?
+           ORDER BY remind_at, id LIMIT ? OFFSET ?`,
+        )
+        .all(userId, limit, offset) as ReminderRow[];
       return rows.map(toReminder);
     },
 

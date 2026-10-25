@@ -1,10 +1,11 @@
 import {
+  ApplicationIntegrationType,
   type ChatInputCommandInteraction,
   InteractionContextType,
   MessageFlags,
   SlashCommandBuilder,
 } from 'discord.js';
-import { command, cooldown, type HandlerContext } from '@/core';
+import { command, cooldown, pages, type HandlerContext } from '@/core';
 import { formatReminderList, parseReminder } from '../input';
 import { deliver } from '../jobs';
 import { createReminderRepository } from '../repository';
@@ -48,7 +49,16 @@ export const remindCommand = command({
             .setRequired(true),
         ),
     )
-    .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM),
+    // Installable to user accounts too, so it works in any server, DM or group DM.
+    .setIntegrationTypes(
+      ApplicationIntegrationType.GuildInstall,
+      ApplicationIntegrationType.UserInstall,
+    )
+    .setContexts(
+      InteractionContextType.Guild,
+      InteractionContextType.BotDM,
+      InteractionContextType.PrivateChannel,
+    ),
 
   guards: [cooldown('5s')],
 
@@ -85,9 +95,20 @@ async function set(interaction: ChatInputCommandInteraction, ctx: HandlerContext
   await reply(interaction, `Reminder #${id} set for <t:${when}:f> (<t:${when}:R>).`);
 }
 
+/** The user's reminders, ten a page. */
+export const reminderPages = pages('reminders:list', {
+  pageSize: 10,
+  count: (ctx, interaction) => createReminderRepository(ctx.db).countForUser(interaction.user.id),
+  render: ({ limit, offset }, ctx, interaction) => ({
+    content: formatReminderList(
+      createReminderRepository(ctx.db).listForUser(interaction.user.id, limit, offset),
+    ),
+  }),
+});
+
 async function list(interaction: ChatInputCommandInteraction, ctx: HandlerContext) {
-  const items = createReminderRepository(ctx.db).listForUser(interaction.user.id);
-  await reply(interaction, formatReminderList(items));
+  const first = await reminderPages.first(interaction, ctx);
+  await interaction.reply({ ...first, flags: MessageFlags.Ephemeral });
 }
 
 async function cancel(interaction: ChatInputCommandInteraction, ctx: HandlerContext) {

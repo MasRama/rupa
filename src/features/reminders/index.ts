@@ -1,5 +1,5 @@
 import { defineFeature } from '@/core';
-import { remindCommand } from './commands/remind';
+import { remindCommand, reminderPages } from './commands/remind';
 import { deliver } from './jobs';
 import { migrations } from './migrations';
 
@@ -7,6 +7,7 @@ import { migrations } from './migrations';
 export const reminders = defineFeature({
   name: 'reminders',
   commands: [remindCommand],
+  components: [reminderPages],
   migrations,
   jobs: [deliver],
 });

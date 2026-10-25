@@ -8,6 +8,7 @@ import { stubLogger } from '@/core/routing/tests/fixtures';
 import { coreSchema } from '@/core/schema';
 import { reminders } from '../index';
 import { formatReminderList, parseReminder } from '../input';
+import { remindCommand, reminderPages } from '../commands/remind';
 import { deliver } from '../jobs';
 import { createReminderRepository } from '../repository';
 
@@ -136,5 +137,36 @@ describe('reminders feature', () => {
     expect(reminders.commands.map(command => command.data.name)).toEqual(['remind']);
     expect(reminders.commands[0]?.guards).toHaveLength(1);
     expect(reminders.jobs).toEqual([deliver]);
+  });
+});
+
+describe('/remind everywhere', () => {
+  it('can be installed to a user account and used in any DM', () => {
+    const body = remindCommand.data.toJSON();
+    expect(body.integration_types).toEqual([0, 1]);
+    expect(body.contexts).toEqual([0, 1, 2]);
+  });
+
+  it('pages through the list ten at a time', async () => {
+    const { ctx, repository } = setup(null);
+    for (let i = 0; i < 11; i++) {
+      repository.add({
+        userId: 'u1',
+        guildId: null,
+        channelId: 'c1',
+        text: `item ${i}`,
+        remindAt: new Date(Date.UTC(2026, 10, 1, 0, i)),
+      });
+    }
+    expect(repository.listForUser('u1', 2, 10).map(item => item.text)).toEqual([
+      'item 9',
+      'item 10',
+    ]);
+
+    const interaction = { user: { id: 'u1' } } as never;
+    const first = await reminderPages.first(interaction, { ...ctx, params: {} });
+    expect(first.content?.split('\n')).toHaveLength(10);
+    expect(first.components).toHaveLength(1);
+    expect(reminders.components).toContain(reminderPages);
   });
 });

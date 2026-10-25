@@ -50,9 +50,9 @@ export async function deployCommand(
   const plan = planCommandDeploy(local, remote);
 
   console.log(`Command plan for ${target.label}:`);
-  for (const name of plan.added) console.log(`  + /${name}`);
-  for (const name of plan.changed) console.log(`  ~ /${name}`);
-  for (const name of plan.removed) console.log(`  - /${name}`);
+  for (const name of plan.added) console.log(`  + ${name}`);
+  for (const name of plan.changed) console.log(`  ~ ${name}`);
+  for (const name of plan.removed) console.log(`  - ${name}`);
   console.log(`  ${plan.unchanged.length} unchanged`);
 
   const pending = plan.added.length + plan.changed.length + plan.removed.length;

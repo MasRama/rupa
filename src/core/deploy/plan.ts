@@ -1,11 +1,17 @@
-import type { RESTPostAPIChatInputApplicationCommandsJSONBody } from 'discord.js';
+import type {
+  RESTPostAPIChatInputApplicationCommandsJSONBody,
+  RESTPostAPIContextMenuApplicationCommandsJSONBody,
+} from 'discord.js';
 import type { FeatureRegistry } from '@/core/routing/registry';
 
-export type LocalCommand = RESTPostAPIChatInputApplicationCommandsJSONBody;
+export type LocalCommand =
+  | RESTPostAPIChatInputApplicationCommandsJSONBody
+  | RESTPostAPIContextMenuApplicationCommandsJSONBody;
 
 /** A command as returned by Discord's application commands endpoint. */
 export type RemoteCommand = { name: string } & Record<string, unknown>;
 
+/** Each list holds labels such as `/ban`, `[user] User info` or `[message] Report message`. */
 export interface DeployPlan {
   added: string[];
   changed: string[];
@@ -13,9 +19,20 @@ export interface DeployPlan {
   unchanged: string[];
 }
 
-/** Slash command bodies for every mounted feature, in mount order. */
+/** Slash commands, then right-click commands, for every mounted feature in mount order. */
 export function buildCommandPayloads(registry: FeatureRegistry): LocalCommand[] {
-  return [...registry.commands.values()].map(({ definition }) => definition.data.toJSON());
+  return [
+    ...[...registry.commands.values()].map(({ definition }) => definition.data.toJSON()),
+    ...registry.menus.map(({ definition }) => definition.data.toJSON()),
+  ];
+}
+
+const MENU_LABELS: Record<number, string> = { 2: 'user', 3: 'message' };
+
+/** How a command shows up in the plan; commands are told apart by type and name. */
+function commandLabel(command: { type?: unknown; name: string }): string {
+  const menu = MENU_LABELS[Number(command.type ?? 1)];
+  return menu ? `[${menu}] ${command.name}` : `/${command.name}`;
 }
 
 type Json = Record<string, unknown>;
@@ -60,7 +77,8 @@ function normalizeCommand(command: Json, local: Json): Json {
   const normalized: Json = {
     type: command.type ?? 1,
     name: command.name,
-    description: command.description,
+    // Discord stores an empty description for right-click commands.
+    description: command.description ?? '',
     default_member_permissions: command.default_member_permissions ?? null,
     nsfw: command.nsfw ?? false,
     name_localizations: command.name_localizations ?? null,
@@ -84,28 +102,29 @@ function stableStringify(value: unknown): string {
   return JSON.stringify(value);
 }
 
-/** Compares local command bodies with what Discord has, by command name. */
+/** Compares local command bodies with what Discord has, by command type and name. */
 export function planCommandDeploy(
   local: readonly LocalCommand[],
   remote: readonly RemoteCommand[],
 ): DeployPlan {
   const plan: DeployPlan = { added: [], changed: [], removed: [], unchanged: [] };
-  const remoteByName = new Map(remote.map(command => [command.name, command as Json]));
+  const remoteByLabel = new Map(remote.map(command => [commandLabel(command), command as Json]));
 
   for (const command of local) {
     const localJson = command as unknown as Json;
-    const existing = remoteByName.get(command.name);
+    const label = commandLabel(command);
+    const existing = remoteByLabel.get(label);
     if (!existing) {
-      plan.added.push(command.name);
+      plan.added.push(label);
       continue;
     }
     const same =
       stableStringify(normalizeCommand(localJson, localJson)) ===
       stableStringify(normalizeCommand(existing, localJson));
-    (same ? plan.unchanged : plan.changed).push(command.name);
+    (same ? plan.unchanged : plan.changed).push(label);
   }
 
-  const localNames = new Set(local.map(command => command.name));
-  plan.removed = remote.map(command => command.name).filter(name => !localNames.has(name));
+  const localLabels = new Set(local.map(commandLabel));
+  plan.removed = remote.map(commandLabel).filter(label => !localLabels.has(label));
   return plan;
 }

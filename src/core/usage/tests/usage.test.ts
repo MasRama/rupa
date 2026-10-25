@@ -1,7 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { migrate, openDatabase } from '@/core/database';
+import { stubLogger } from '@/core/routing/tests/fixtures';
 import { coreSchema } from '@/core/schema';
-import { createUsageQueries, createUsageRecorder, pruneUsage, type UsageEvent } from '../index';
+import {
+  createUsageQueries,
+  createUsageRecorder,
+  pruneUsage,
+  scheduleUsagePruning,
+  type UsageEvent,
+} from '../index';
 
 const DAY = 24 * 60 * 60 * 1000;
 const now = new Date('2026-10-25T12:00:00Z');
@@ -122,5 +129,28 @@ describe('usage store', () => {
 
     expect(pruneUsage(db, 90, now)).toBe(1);
     expect(queries.summary({ since: new Date(0), until: now }).uses).toBe(1);
+  });
+});
+
+describe('scheduleUsagePruning', () => {
+  it('prunes now and then once a day until stopped', () => {
+    vi.useFakeTimers({ now });
+    try {
+      const { db, recorder } = setup();
+      const logger = stubLogger();
+      const stop = scheduleUsagePruning(db, { retentionDays: 1, logger });
+
+      recorder.record(event({ at: new Date(now.getTime() - 2 * DAY) }));
+      recorder.record(event());
+      vi.advanceTimersByTime(DAY);
+      expect(db.prepare('SELECT COUNT(*) AS n FROM rupa_usage_events').get()).toEqual({ n: 1 });
+
+      stop();
+      recorder.record(event({ at: new Date(now.getTime() - 3 * DAY) }));
+      vi.advanceTimersByTime(DAY);
+      expect(db.prepare('SELECT COUNT(*) AS n FROM rupa_usage_events').get()).toEqual({ n: 2 });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

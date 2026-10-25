@@ -3,6 +3,8 @@ import { ConfigError, loadConfig, loadEnvFile, requireDiscordCredentials } from 
 import { migrate, openDatabase } from '@/core/database';
 import { createLogger } from '@/core/logging';
 import { createRegistry } from '@/core/routing/registry';
+import { coreSchema } from '@/core/schema';
+import { createUsageRecorder, scheduleUsagePruning } from '@/core/usage';
 import { features } from './features';
 
 async function main(): Promise<void> {
@@ -17,16 +19,24 @@ async function main(): Promise<void> {
   const registry = createRegistry(features);
   const db = openDatabase(config.databasePath);
   // Tables exist before the first interaction can arrive.
-  const { applied } = migrate(db, registry.features);
+  const { applied } = migrate(db, [coreSchema, ...registry.features]);
   if (applied.length > 0) logger.info({ applied }, 'Applied migrations');
 
-  const bot = createBot({ registry, db, logger });
+  const { stats } = config;
+  const stopPruning = scheduleUsagePruning(db, { retentionDays: stats.retentionDays, logger });
+  const bot = createBot({
+    registry,
+    db,
+    logger,
+    ...(stats.enabled && { usage: createUsageRecorder(db, { trackUsers: stats.trackUsers }) }),
+  });
 
   let stopping = false;
   const shutdown = async (signal: NodeJS.Signals) => {
     if (stopping) return;
     stopping = true;
     logger.info({ signal }, 'Shutting down');
+    stopPruning();
     await bot.stop();
     process.exit(0);
   };
@@ -44,6 +54,7 @@ async function main(): Promise<void> {
     await bot.start(token);
   } catch (error) {
     logger.fatal({ err: error }, 'Could not connect to Discord');
+    stopPruning();
     await bot.stop();
     process.exitCode = 1;
   }

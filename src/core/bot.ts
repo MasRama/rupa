@@ -4,11 +4,14 @@ import type { Logger } from '@/core/logging';
 import type { HandlerContext } from '@/core/routing/definitions';
 import type { FeatureRegistry } from '@/core/routing/registry';
 import { dispatchInteraction } from '@/core/routing/router';
+import type { UsageRecorder } from '@/core/usage';
 
 export interface BotDeps {
   registry: FeatureRegistry;
   db: Database;
   logger: Logger;
+  /** Omit to turn usage statistics off. */
+  usage?: UsageRecorder;
 }
 
 export interface Bot {
@@ -20,7 +23,7 @@ export interface Bot {
 }
 
 /** Wires a discord.js client to the mounted features. Does not connect yet. */
-export function createBot({ registry, db, logger }: BotDeps): Bot {
+export function createBot({ registry, db, logger, usage }: BotDeps): Bot {
   const client = new Client({ intents: registry.intents() });
 
   client.once(Events.ClientReady, ready => {
@@ -29,7 +32,10 @@ export function createBot({ registry, db, logger }: BotDeps): Bot {
   client.on(Events.Error, error => logger.error({ err: error }, 'Discord client error'));
   client.on(Events.Warn, warning => logger.warn({ warning }, 'Discord client warning'));
   client.on(Events.InteractionCreate, interaction =>
-    dispatchInteraction(interaction, { registry, db, logger }),
+    dispatchInteraction(
+      interaction,
+      usage ? { registry, db, logger, usage } : { registry, db, logger },
+    ),
   );
 
   for (const { feature, definition } of registry.events) {

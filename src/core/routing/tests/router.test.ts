@@ -1,6 +1,7 @@
 import { MessageFlags } from 'discord.js';
 import { describe, expect, it, vi } from 'vitest';
 import { openDatabase } from '@/core/database';
+import type { UsageEvent } from '@/core/usage';
 import { defineFeature } from '@/core/feature';
 import { button, command, modal, select } from '../definitions';
 import { createRegistry } from '../registry';
@@ -142,5 +143,123 @@ describe('dispatchInteraction', () => {
 
     await expect(dispatchInteraction(interaction, deps)).resolves.toBeUndefined();
     expect(logger.error).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('usage recording', () => {
+  function recorded(feature: ReturnType<typeof defineFeature>) {
+    const events: UsageEvent[] = [];
+    const { deps, logger } = setup(feature);
+    return {
+      events,
+      logger,
+      deps: { ...deps, usage: { record: (event: UsageEvent) => void events.push(event) } },
+    };
+  }
+
+  it('records a successful command with its duration', async () => {
+    const { deps, events } = recorded(
+      defineFeature({
+        name: 'general',
+        commands: [command({ data: slash('ping'), execute: vi.fn() })],
+      }),
+    );
+    await dispatchInteraction(stubInteraction('command', 'ping'), deps);
+
+    expect(events).toEqual([
+      {
+        at: expect.any(Date),
+        feature: 'general',
+        kind: 'command',
+        target: '/ping',
+        guildId: 'guild-1',
+        userId: 'user-1',
+        outcome: 'ok',
+        durationMs: expect.any(Number),
+      },
+    ]);
+  });
+
+  it('records a failing handler as an error', async () => {
+    const { deps, events } = recorded(
+      defineFeature({
+        name: 'a',
+        commands: [
+          command({
+            data: slash('boom'),
+            execute: async () => {
+              throw new Error('kaboom');
+            },
+          }),
+        ],
+      }),
+    );
+    await dispatchInteraction(stubInteraction('command', 'boom'), deps);
+    expect(events[0]?.outcome).toBe('error');
+  });
+
+  it('includes the subcommand group and subcommand in the target', async () => {
+    const { deps, events } = recorded(
+      defineFeature({
+        name: 'a',
+        commands: [command({ data: slash('ticket'), execute: vi.fn() })],
+      }),
+    );
+    await dispatchInteraction(
+      stubInteraction('command', 'ticket', { group: 'admin', subcommand: 'close' }),
+      deps,
+    );
+    expect(events[0]?.target).toBe('/ticket admin close');
+  });
+
+  it('records components by route pattern, not by custom id', async () => {
+    const { deps, events } = recorded(
+      defineFeature({
+        name: 'moderation',
+        components: [button('moderation:ban/:userId', vi.fn())],
+      }),
+    );
+    await dispatchInteraction(stubInteraction('button', 'moderation:ban/42'), deps);
+    expect(events[0]).toMatchObject({ kind: 'button', target: 'moderation:ban/:userId' });
+  });
+
+  it('does not record autocomplete or unhandled interactions', async () => {
+    const { deps, events } = recorded(
+      defineFeature({
+        name: 'a',
+        commands: [command({ data: slash('find'), execute: vi.fn(), autocomplete: vi.fn() })],
+      }),
+    );
+    await dispatchInteraction(stubInteraction('autocomplete', 'find'), deps);
+    await dispatchInteraction(stubInteraction('button', 'gone/1'), deps);
+    expect(events).toEqual([]);
+  });
+
+  it('still answers normally when recording throws', async () => {
+    const { deps, logger } = setup(
+      defineFeature({
+        name: 'a',
+        commands: [
+          command({
+            data: slash('boom'),
+            execute: async () => {
+              throw new Error('kaboom');
+            },
+          }),
+        ],
+      }),
+    );
+    const usage = {
+      record: () => {
+        throw new Error('database is closed');
+      },
+    };
+    const interaction = stubInteraction('command', 'boom');
+
+    await expect(dispatchInteraction(interaction, { ...deps, usage })).resolves.toBeUndefined();
+    expect(interaction.reply).toHaveBeenCalledWith(
+      expect.objectContaining({ flags: MessageFlags.Ephemeral }),
+    );
+    expect(logger.warn).toHaveBeenCalled();
   });
 });

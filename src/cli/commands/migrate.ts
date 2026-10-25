@@ -1,11 +1,12 @@
 import type { AppConfig } from '@/core/config';
 import { migrate, migrationStatus, openDatabase } from '@/core/database';
 import type { Feature } from '@/core/feature';
+import { coreSchema } from '@/core/schema';
 
 export function migrateCommand(config: AppConfig, features: readonly Feature[]): void {
   const db = openDatabase(config.databasePath);
   try {
-    const { applied } = migrate(db, features);
+    const { applied } = migrate(db, [coreSchema, ...features]);
     if (applied.length === 0) {
       console.log('Database is up to date.');
       return;
@@ -20,9 +21,9 @@ export function migrateCommand(config: AppConfig, features: readonly Feature[]):
 export function migrateStatusCommand(config: AppConfig, features: readonly Feature[]): void {
   const db = openDatabase(config.databasePath);
   try {
-    const rows = migrationStatus(db, features);
+    const rows = migrationStatus(db, [coreSchema, ...features]);
     if (rows.length === 0) {
-      console.log('No feature declares migrations.');
+      console.log('No migrations are declared.');
       return;
     }
     for (const row of rows) {

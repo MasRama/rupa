@@ -68,6 +68,27 @@ describe('createBot', () => {
     expect(execute).toHaveBeenCalledTimes(1);
   });
 
+  it('records usage of dispatched interactions', async () => {
+    const record = vi.fn();
+    const logger = stubLogger();
+    const bot = createBot({
+      registry: createRegistry([
+        defineFeature({
+          name: 'general',
+          commands: [command({ data: slash('ping'), execute: vi.fn() })],
+        }),
+      ]),
+      db: openDatabase(':memory:'),
+      logger,
+      usage: { record },
+    });
+
+    bot.client.emit(Events.InteractionCreate, stubInteraction('command', 'ping'));
+    await flush();
+
+    expect(record).toHaveBeenCalledWith(expect.objectContaining({ target: '/ping' }));
+  });
+
   it('stop() destroys the client and closes the database', async () => {
     const { bot, db } = build([]);
     await bot.stop();

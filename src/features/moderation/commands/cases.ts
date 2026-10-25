@@ -36,7 +36,10 @@ export const casesCommand = command({
           : recent
               .map(entry => {
                 const when = `<t:${Math.floor(Date.parse(entry.createdAt) / 1000)}:R>`;
-                return `**#${entry.id}** ${entry.action} · ${when} · by <@${entry.moderatorId}>\n${entry.reason ?? 'No reason given'}`;
+                const until = entry.expiresAt
+                  ? ` until <t:${Math.floor(Date.parse(entry.expiresAt) / 1000)}:R>`
+                  : '';
+                return `**#${entry.id}** ${entry.action}${until} · ${when} · by <@${entry.moderatorId}>\n${entry.reason ?? 'No reason given'}`;
               })
               .join('\n\n'),
       )

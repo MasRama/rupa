@@ -8,8 +8,9 @@ import {
   PermissionFlagsBits,
   SlashCommandBuilder,
 } from 'discord.js';
-import { command, requireBotPermissions } from '@/core';
+import { command, formatDuration, requireBotPermissions } from '@/core';
 import { cancelBan, confirmBan } from '../components/ban';
+import { parseBanDuration } from '../duration';
 import { moderationBlocker } from '../hierarchy';
 import { ephemeral } from '../replies';
 
@@ -28,6 +29,12 @@ export const banCommand = command({
         .setMinValue(0)
         .setMaxValue(7),
     )
+    .addStringOption(option =>
+      option
+        .setName('duration')
+        .setDescription('Lift the ban after this long, e.g. 1h, 7d or 30d (default: permanent)')
+        .setMaxLength(20),
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
     .setContexts(InteractionContextType.Guild),
 
@@ -39,6 +46,11 @@ export const banCommand = command({
     const user = interaction.options.getUser('user', true);
     const reason = interaction.options.getString('reason');
     const days = interaction.options.getInteger('delete_days') ?? 0;
+    const duration = parseBanDuration(interaction.options.getString('duration'));
+    if ('error' in duration) {
+      await interaction.reply(ephemeral(duration.error));
+      return;
+    }
 
     const blocker = moderationBlocker({
       action: 'ban',
@@ -60,10 +72,20 @@ export const banCommand = command({
         { name: 'User', value: `${user} (${user.id})` },
         { name: 'Reason', value: reason ?? 'No reason given' },
         { name: 'Delete messages', value: days === 0 ? 'None' : `Last ${days} day(s)` },
+        {
+          name: 'Duration',
+          value: duration.seconds === 0 ? 'Permanent' : formatDuration(duration.seconds * 1000),
+        },
       );
     const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
-        .setCustomId(confirmBan.id({ userId: user.id, days: String(days) }))
+        .setCustomId(
+          confirmBan.id({
+            userId: user.id,
+            days: String(days),
+            seconds: String(duration.seconds),
+          }),
+        )
         .setLabel('Ban')
         .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()

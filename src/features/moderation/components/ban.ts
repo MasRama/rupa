@@ -1,6 +1,7 @@
 import { PermissionFlagsBits } from 'discord.js';
 import { button, requireBotPermissions } from '@/core';
 import { moderationBlocker } from '../hierarchy';
+import { scheduleUnban } from '../jobs';
 import { caseEmbed, notifyMember, postToLogChannel } from '../replies';
 import { createCaseRepository } from '../repository';
 import { moderationSettings } from '../settings';
@@ -8,16 +9,19 @@ import { moderationSettings } from '../settings';
 const DAY_SECONDS = 24 * 60 * 60;
 
 /**
- * "Ban" on the confirmation sent by /ban. The route carries the target and how
- * many days of messages to delete; the reason is read from the confirmation
- * embed so it does not count against the 100-character custom id limit.
+ * "Ban" on the confirmation sent by /ban. The route carries the target, how
+ * many days of messages to delete and how long the ban lasts in seconds (0 for
+ * permanent); the reason is read from the confirmation embed so it does not
+ * count against the 100-character custom id limit.
  */
 export const confirmBan = button(
-  'moderation:ban/:userId/:days',
+  'moderation:ban/:userId/:days/:seconds',
   async (interaction, ctx) => {
     if (!interaction.inCachedGuild()) return;
     const { guild } = interaction;
     const { userId, days } = ctx.params;
+    const seconds = Number(ctx.params.seconds);
+    const expiresAt = seconds > 0 ? new Date(Date.now() + seconds * 1000).toISOString() : null;
     const reasonField = interaction.message.embeds[0]?.fields.find(
       field => field.name === 'Reason',
     );
@@ -52,7 +56,9 @@ export const confirmBan = button(
       moderatorId: interaction.user.id,
       action: 'ban',
       reason,
+      expiresAt,
     });
+    scheduleUnban(ctx.jobs, { guildId: guild.id, userId, caseId, seconds });
     ctx.logger.info({ guildId: guild.id, userId, caseId }, 'Member banned');
 
     await interaction.update({ content: `Done. Case #${caseId}.`, embeds: [], components: [] });
@@ -62,6 +68,7 @@ export const confirmBan = button(
       target: user,
       moderator: interaction.user,
       reason,
+      expiresAt,
     });
     await interaction.followUp({ embeds: [embed] });
     await postToLogChannel(guild, settings.logChannel, embed, ctx.logger);

@@ -8,6 +8,7 @@ const ACTION_STYLE: Record<CaseAction, { title: string; color: number }> = {
   warn: { title: 'Member warned', color: 0xfee75c },
   kick: { title: 'Member kicked', color: 0xe67e22 },
   ban: { title: 'Member banned', color: 0xed4245 },
+  unban: { title: 'Member unbanned', color: 0x57f287 },
 };
 
 /** Public record of a moderation action. */
@@ -17,9 +18,11 @@ export function caseEmbed(input: {
   target: User;
   moderator: User;
   reason: string | null;
+  /** When a temporary ban ends. */
+  expiresAt?: string | null;
 }): EmbedBuilder {
   const style = ACTION_STYLE[input.action];
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setTitle(`${style.title} · case #${input.caseId}`)
     .setColor(style.color)
     .addFields(
@@ -28,6 +31,13 @@ export function caseEmbed(input: {
       { name: 'Reason', value: input.reason ?? 'No reason given' },
     )
     .setTimestamp();
+  if (input.expiresAt) {
+    embed.addFields({
+      name: 'Ends',
+      value: `<t:${Math.floor(Date.parse(input.expiresAt) / 1000)}:f>`,
+    });
+  }
+  return embed;
 }
 
 /** Tells the member what happened. Returns false when their DMs are closed. */
@@ -37,7 +47,12 @@ export async function notifyMember(
   action: CaseAction,
   reason: string | null,
 ): Promise<boolean> {
-  const verb = { warn: 'warned in', kick: 'kicked from', ban: 'banned from' }[action];
+  const verb = {
+    warn: 'warned in',
+    kick: 'kicked from',
+    ban: 'banned from',
+    unban: 'unbanned from',
+  }[action];
   try {
     await user.send(`You were ${verb} **${guildName}**.${reason ? `\nReason: ${reason}` : ''}`);
     return true;

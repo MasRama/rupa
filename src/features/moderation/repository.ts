@@ -1,6 +1,6 @@
 import type { Database } from '@/core';
 
-export type CaseAction = 'warn' | 'kick' | 'ban';
+export type CaseAction = 'warn' | 'kick' | 'ban' | 'unban';
 
 export interface NewCase {
   guildId: string;
@@ -8,11 +8,14 @@ export interface NewCase {
   moderatorId: string;
   action: CaseAction;
   reason: string | null;
+  /** When a temporary ban ends, as an ISO timestamp. */
+  expiresAt?: string | null;
 }
 
 export interface ModerationCase extends NewCase {
   id: number;
   createdAt: string;
+  expiresAt: string | null;
 }
 
 interface CaseRow {
@@ -23,6 +26,7 @@ interface CaseRow {
   action: CaseAction;
   reason: string | null;
   created_at: string;
+  expires_at: string | null;
 }
 
 const toCase = (row: CaseRow): ModerationCase => ({
@@ -33,6 +37,7 @@ const toCase = (row: CaseRow): ModerationCase => ({
   action: row.action,
   reason: row.reason,
   createdAt: row.created_at,
+  expiresAt: row.expires_at,
 });
 
 export function createCaseRepository(db: Database) {
@@ -41,10 +46,17 @@ export function createCaseRepository(db: Database) {
     add(entry: NewCase): number {
       const result = db
         .prepare(
-          `INSERT INTO moderation_cases (guild_id, user_id, moderator_id, action, reason)
-           VALUES (?, ?, ?, ?, ?)`,
+          `INSERT INTO moderation_cases (guild_id, user_id, moderator_id, action, reason, expires_at)
+           VALUES (?, ?, ?, ?, ?, ?)`,
         )
-        .run(entry.guildId, entry.userId, entry.moderatorId, entry.action, entry.reason);
+        .run(
+          entry.guildId,
+          entry.userId,
+          entry.moderatorId,
+          entry.action,
+          entry.reason,
+          entry.expiresAt ?? null,
+        );
       return Number(result.lastInsertRowid);
     },
 

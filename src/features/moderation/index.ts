@@ -7,6 +7,7 @@ import { warnCommand } from './commands/warn';
 import { cancelBan, confirmBan } from './components/ban';
 import { warnReason } from './components/warn';
 import { migrations } from './migrations';
+import { moderationSettings } from './settings';
 
 /** Kick, ban (with confirmation), warn (with a reason modal), clear and case history. */
 export const moderation = defineFeature({
@@ -14,4 +15,5 @@ export const moderation = defineFeature({
   commands: [kickCommand, banCommand, warnCommand, casesCommand, clearCommand],
   components: [confirmBan, cancelBan, warnReason],
   migrations,
+  settings: moderationSettings,
 });

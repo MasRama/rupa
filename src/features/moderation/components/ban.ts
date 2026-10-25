@@ -1,7 +1,8 @@
 import { button } from '@/core';
 import { moderationBlocker } from '../hierarchy';
-import { caseEmbed, notifyMember } from '../replies';
+import { caseEmbed, notifyMember, postToLogChannel } from '../replies';
 import { createCaseRepository } from '../repository';
+import { moderationSettings } from '../settings';
 
 const DAY_SECONDS = 24 * 60 * 60;
 
@@ -33,7 +34,8 @@ export const confirmBan = button('moderation:ban/:userId/:days', async (interact
   }
 
   const user = await interaction.client.users.fetch(userId);
-  if (target) await notifyMember(user, guild.name, 'ban', reason);
+  const settings = moderationSettings.read(ctx, guild.id);
+  if (target && settings.dmMembers) await notifyMember(user, guild.name, 'ban', reason);
   await guild.bans.create(userId, {
     reason: `${reason ?? 'No reason given'} (by ${interaction.user.username})`,
     deleteMessageSeconds: Number(days) * DAY_SECONDS,
@@ -48,11 +50,15 @@ export const confirmBan = button('moderation:ban/:userId/:days', async (interact
   ctx.logger.info({ guildId: guild.id, userId, caseId }, 'Member banned');
 
   await interaction.update({ content: `Done. Case #${caseId}.`, embeds: [], components: [] });
-  await interaction.followUp({
-    embeds: [
-      caseEmbed({ action: 'ban', caseId, target: user, moderator: interaction.user, reason }),
-    ],
+  const embed = caseEmbed({
+    action: 'ban',
+    caseId,
+    target: user,
+    moderator: interaction.user,
+    reason,
   });
+  await interaction.followUp({ embeds: [embed] });
+  await postToLogChannel(guild, settings.logChannel, embed, ctx.logger);
 });
 
 export const cancelBan = button('moderation:ban-cancel', async interaction => {

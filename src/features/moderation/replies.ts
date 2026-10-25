@@ -1,4 +1,5 @@
-import { EmbedBuilder, MessageFlags, type User } from 'discord.js';
+import { EmbedBuilder, MessageFlags, type Guild, type User } from 'discord.js';
+import type { Logger } from '@/core';
 import type { CaseAction } from './repository';
 
 export const ephemeral = (content: string) => ({ content, flags: MessageFlags.Ephemeral }) as const;
@@ -42,5 +43,21 @@ export async function notifyMember(
     return true;
   } catch {
     return false;
+  }
+}
+
+/** Posts a copy of a case to the server's log channel, if one is set and usable. */
+export async function postToLogChannel(
+  guild: Guild,
+  channelId: string | null,
+  embed: EmbedBuilder,
+  logger: Logger,
+): Promise<void> {
+  if (!channelId) return;
+  try {
+    const channel = await guild.channels.fetch(channelId);
+    if (channel?.isSendable()) await channel.send({ embeds: [embed] });
+  } catch (error) {
+    logger.warn({ err: error, guildId: guild.id, channelId }, 'Could not post to the log channel');
   }
 }

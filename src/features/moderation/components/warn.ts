@@ -1,7 +1,8 @@
 import { ModalBuilder, TextInputStyle } from 'discord.js';
 import { modal } from '@/core';
-import { caseEmbed, ephemeral, notifyMember } from '../replies';
+import { caseEmbed, ephemeral, notifyMember, postToLogChannel } from '../replies';
 import { createCaseRepository } from '../repository';
+import { moderationSettings } from '../settings';
 
 const REASON_INPUT = 'reason';
 
@@ -26,22 +27,21 @@ export const warnReason = modal('moderation:warn/:userId', async (interaction, c
   });
   const total = cases.countForMember(guild.id, userId);
   const user = await interaction.client.users.fetch(userId);
-  const delivered = await notifyMember(user, guild.name, 'warn', reason);
+  const settings = moderationSettings.read(ctx, guild.id);
+  const undelivered = settings.dmMembers && !(await notifyMember(user, guild.name, 'warn', reason));
   ctx.logger.info({ guildId: guild.id, userId, caseId }, 'Member warned');
 
-  await interaction.reply({
-    embeds: [
-      caseEmbed({
-        action: 'warn',
-        caseId,
-        target: user,
-        moderator: interaction.user,
-        reason,
-      }).setFooter({
-        text: `${total} case(s) on record${delivered ? '' : ' · could not DM the member'}`,
-      }),
-    ],
+  const embed = caseEmbed({
+    action: 'warn',
+    caseId,
+    target: user,
+    moderator: interaction.user,
+    reason,
+  }).setFooter({
+    text: `${total} case(s) on record${undelivered ? ' · could not DM the member' : ''}`,
   });
+  await interaction.reply({ embeds: [embed] });
+  await postToLogChannel(guild, settings.logChannel, embed, ctx.logger);
 });
 
 export function warnModal(userId: string, username: string): ModalBuilder {

@@ -1,8 +1,9 @@
 import { InteractionContextType, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import { command } from '@/core';
 import { moderationBlocker } from '../hierarchy';
-import { caseEmbed, ephemeral, notifyMember } from '../replies';
+import { caseEmbed, ephemeral, notifyMember, postToLogChannel } from '../replies';
 import { createCaseRepository } from '../repository';
+import { moderationSettings } from '../settings';
 
 export const kickCommand = command({
   data: new SlashCommandBuilder()
@@ -41,7 +42,8 @@ export const kickCommand = command({
       return;
     }
 
-    await notifyMember(user, guild.name, 'kick', reason);
+    const settings = moderationSettings.read(ctx, guild.id);
+    if (settings.dmMembers) await notifyMember(user, guild.name, 'kick', reason);
     await target.kick(`${reason ?? 'No reason given'} (by ${interaction.user.username})`);
     const caseId = createCaseRepository(ctx.db).add({
       guildId: guild.id,
@@ -52,10 +54,14 @@ export const kickCommand = command({
     });
     ctx.logger.info({ guildId: guild.id, userId: user.id, caseId }, 'Member kicked');
 
-    await interaction.reply({
-      embeds: [
-        caseEmbed({ action: 'kick', caseId, target: user, moderator: interaction.user, reason }),
-      ],
+    const embed = caseEmbed({
+      action: 'kick',
+      caseId,
+      target: user,
+      moderator: interaction.user,
+      reason,
     });
+    await interaction.reply({ embeds: [embed] });
+    await postToLogChannel(guild, settings.logChannel, embed, ctx.logger);
   },
 });

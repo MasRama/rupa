@@ -42,16 +42,22 @@ function define<T, Options extends BaseOptions<T>>(
 
 export const setting = {
   string<O extends BaseOptions<string> & { maxLength?: number }>(options: O) {
-    const schema = options.maxLength === undefined ? z.string() : z.string().max(options.maxLength);
+    const schema =
+      options.maxLength === undefined
+        ? z.string()
+        : z.string().max(options.maxLength, `Must be at most ${options.maxLength} characters`);
     return define<string, O>('string', options, schema, { maxLength: options.maxLength });
   },
 
   number<O extends BaseOptions<number> & { min?: number; max?: number; integer?: boolean }>(
     options: O,
   ) {
-    let schema = options.integer ? z.number().int() : z.number();
-    if (options.min !== undefined) schema = schema.min(options.min);
-    if (options.max !== undefined) schema = schema.max(options.max);
+    let schema = z.number('Must be a number');
+    if (options.integer) schema = schema.int('Must be a whole number');
+    if (options.min !== undefined)
+      schema = schema.min(options.min, `Must be at least ${options.min}`);
+    if (options.max !== undefined)
+      schema = schema.max(options.max, `Must be at most ${options.max}`);
     return define<number, O>('number', options, schema, {
       min: options.min,
       max: options.max,
@@ -60,7 +66,7 @@ export const setting = {
   },
 
   boolean<O extends BaseOptions<boolean>>(options: O) {
-    return define<boolean, O>('boolean', options, z.boolean());
+    return define<boolean, O>('boolean', options, z.boolean('Must be on or off'));
   },
 
   /** A text channel in the server, stored as its id. */
@@ -68,13 +74,13 @@ export const setting = {
     return define<string, O>(
       'channel',
       options,
-      z.string().regex(SNOWFLAKE, 'must be a channel id'),
+      z.string().regex(SNOWFLAKE, 'Must be a channel id'),
     );
   },
 
   /** A role in the server, stored as its id. */
   role<O extends BaseOptions<string>>(options: O) {
-    return define<string, O>('role', options, z.string().regex(SNOWFLAKE, 'must be a role id'));
+    return define<string, O>('role', options, z.string().regex(SNOWFLAKE, 'Must be a role id'));
   },
 };
 

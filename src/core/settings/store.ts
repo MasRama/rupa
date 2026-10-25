@@ -22,7 +22,7 @@ export interface Settings<D extends SettingDefinitions = SettingDefinitions> {
 
 export class SettingsError extends Error {
   constructor(readonly issues: { key: string; message: string }[]) {
-    super(`Invalid settings: ${issues.map(issue => `${issue.key} ${issue.message}`).join('; ')}`);
+    super(`Invalid settings: ${issues.map(issue => `${issue.key}: ${issue.message}`).join('; ')}`);
     this.name = 'SettingsError';
   }
 }
@@ -74,7 +74,7 @@ export function writeSettings(
   for (const [key, value] of Object.entries(values)) {
     const definition = settings.definitions[key];
     if (!definition) {
-      issues.push({ key, message: 'is not a setting' });
+      issues.push({ key, message: 'Is not a setting' });
       continue;
     }
     if (value === null) {
@@ -83,7 +83,7 @@ export function writeSettings(
     }
     const parsed = definition.schema.safeParse(value);
     if (parsed.success) changes.push({ key, value: JSON.stringify(parsed.data) });
-    else issues.push({ key, message: parsed.error.issues[0]?.message ?? 'is invalid' });
+    else issues.push({ key, message: parsed.error.issues[0]?.message ?? 'Is not valid' });
   }
   if (issues.length > 0) throw new SettingsError(issues);
 

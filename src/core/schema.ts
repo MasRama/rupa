@@ -39,5 +39,20 @@ export const coreSchema: MigrationSource = {
         );
       `,
     },
+    {
+      id: '003_create_sessions',
+      up: `
+        CREATE TABLE rupa_sessions (
+          id_hash    TEXT PRIMARY KEY,
+          user_id    TEXT NOT NULL,
+          username   TEXT NOT NULL,
+          avatar     TEXT,
+          guild_ids  TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          expires_at TEXT NOT NULL
+        );
+        CREATE INDEX rupa_sessions_expires_at ON rupa_sessions (expires_at);
+      `,
+    },
   ],
 };

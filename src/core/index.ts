@@ -20,11 +20,24 @@ export type { Database, Migration } from './database';
 export type { Logger } from './logging';
 export {
   defineSettings,
+  formValue,
   setting,
+  SettingsError,
+  writeSettings,
   type SettingDefinition,
   type Settings,
   type SettingValues,
 } from './settings';
+export {
+  MessagePage,
+  requireGuildManager,
+  requireOwner,
+  requireUser,
+  type SessionUser,
+  type WebApp,
+  type WebContext,
+  type WebEnv,
+} from './web';
 export {
   createUsageQueries,
   sparkline,

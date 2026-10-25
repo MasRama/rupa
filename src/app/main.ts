@@ -5,12 +5,19 @@ import { createLogger } from '@/core/logging';
 import { createRegistry } from '@/core/routing/registry';
 import { coreSchema } from '@/core/schema';
 import { createUsageRecorder, scheduleUsagePruning } from '@/core/usage';
+import {
+  createDiscordAccess,
+  createDiscordOAuth,
+  createWebApp,
+  startWebServer,
+  type WebServer,
+} from '@/core/web';
 import { features } from './features';
 
 async function main(): Promise<void> {
   loadEnvFile();
   const config = loadConfig(process.env);
-  const { token } = requireDiscordCredentials(config);
+  const { token, clientId } = requireDiscordCredentials(config);
   const logger = createLogger({
     level: config.logLevel,
     pretty: config.nodeEnv === 'development',
@@ -31,12 +38,32 @@ async function main(): Promise<void> {
     ...(stats.enabled && { usage: createUsageRecorder(db, { trackUsers: stats.trackUsers }) }),
   });
 
+  let web: WebServer | null = null;
+  if (config.dashboard) {
+    const { dashboard } = config;
+    const app = createWebApp({
+      registry,
+      db,
+      logger,
+      client: bot.client,
+      config: dashboard,
+      oauth: createDiscordOAuth({
+        clientId,
+        clientSecret: dashboard.clientSecret,
+        redirectUri: `${dashboard.url}/auth/callback`,
+      }),
+      access: createDiscordAccess(bot.client, dashboard.ownerIds),
+    });
+    web = startWebServer(app, dashboard.port, logger);
+  }
+
   let stopping = false;
   const shutdown = async (signal: NodeJS.Signals) => {
     if (stopping) return;
     stopping = true;
     logger.info({ signal }, 'Shutting down');
     stopPruning();
+    await web?.close();
     await bot.stop();
     process.exit(0);
   };
@@ -55,6 +82,7 @@ async function main(): Promise<void> {
   } catch (error) {
     logger.fatal({ err: error }, 'Could not connect to Discord');
     stopPruning();
+    await web?.close();
     await bot.stop();
     process.exitCode = 1;
   }

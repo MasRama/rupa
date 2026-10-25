@@ -2,6 +2,7 @@ import type { GatewayIntentBits } from 'discord.js';
 import type { Migration } from '@/core/database';
 import { CORE_SCHEMA_NAME } from '@/core/schema';
 import type { Settings } from '@/core/settings';
+import type { WebHook } from '@/core/web/types';
 import type {
   CommandDefinition,
   ComponentDefinition,
@@ -27,6 +28,8 @@ export interface FeatureDefinition {
   /** Per-server settings, from `defineSettings`; editable in the dashboard. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   settings?: Settings<any>;
+  /** Adds pages and routes to the dashboard (only runs when DASHBOARD_PORT is set). */
+  web?: WebHook;
 }
 
 type ListKeys = 'intents' | 'commands' | 'components' | 'events' | 'migrations';
@@ -37,6 +40,7 @@ export type Feature = {
   readonly [Key in ListKeys]-?: NonNullable<FeatureDefinition[Key]>;
 } & {
   readonly settings: Settings | null;
+  readonly web: WebHook | null;
 };
 
 const FEATURE_NAME = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
@@ -56,5 +60,6 @@ export function defineFeature(definition: FeatureDefinition): Feature {
     events: definition.events ?? [],
     migrations: definition.migrations ?? [],
     settings: definition.settings ?? null,
+    web: definition.web ?? null,
   });
 }

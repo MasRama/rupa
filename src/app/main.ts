@@ -1,10 +1,5 @@
 import { createBot } from '@/core/bot';
-import {
-  ConfigError,
-  loadConfig,
-  loadEnvFile,
-  requireDiscordCredentials,
-} from '@/core/config';
+import { ConfigError, loadConfig, loadEnvFile, requireDiscordCredentials } from '@/core/config';
 import { migrate, openDatabase } from '@/core/database';
 import { createLogger } from '@/core/logging';
 import { createRegistry } from '@/core/routing/registry';
@@ -45,7 +40,13 @@ async function main(): Promise<void> {
     { features: registry.features.map(feature => feature.name), commands: registry.commands.size },
     'Starting Rupa',
   );
-  await bot.start(token);
+  try {
+    await bot.start(token);
+  } catch (error) {
+    logger.fatal({ err: error }, 'Could not connect to Discord');
+    await bot.stop();
+    process.exitCode = 1;
+  }
 }
 
 main().catch((error: unknown) => {

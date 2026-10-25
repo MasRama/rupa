@@ -1,5 +1,5 @@
 import { ChannelType, EmbedBuilder, InteractionContextType, SlashCommandBuilder } from 'discord.js';
-import { command } from '@/core';
+import { command, cooldown } from '@/core';
 import { relativeTime } from '../format';
 
 export const serverinfoCommand = command({
@@ -7,6 +7,8 @@ export const serverinfoCommand = command({
     .setName('serverinfo')
     .setDescription('Show information about this server')
     .setContexts(InteractionContextType.Guild),
+
+  guards: [cooldown('5s')],
 
   async execute(interaction) {
     if (!interaction.inCachedGuild()) return;

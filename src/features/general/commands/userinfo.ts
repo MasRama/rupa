@@ -1,5 +1,5 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { command } from '@/core';
+import { command, cooldown } from '@/core';
 import { relativeTime } from '../format';
 
 const SHOWN_ROLES = 10;
@@ -9,6 +9,8 @@ export const userinfoCommand = command({
     .setName('userinfo')
     .setDescription('Show information about a user')
     .addUserOption(option => option.setName('user').setDescription('Defaults to you')),
+
+  guards: [cooldown('5s')],
 
   async execute(interaction) {
     const user = interaction.options.getUser('user') ?? interaction.user;

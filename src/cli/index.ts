@@ -4,6 +4,7 @@ import { createRegistry } from '@/core/routing/registry';
 import { clearCommands, deployCommand } from './commands/deploy';
 import { makeFeatureCommand } from './commands/make-feature';
 import { migrateCommand, migrateStatusCommand } from './commands/migrate';
+import { statsCommand } from './commands/stats';
 
 const HELP = `Usage: npm run rupa -- <command>
 
@@ -11,6 +12,8 @@ Commands:
   make feature <name>     Scaffold src/features/<name>
   migrate                 Apply pending feature migrations
   migrate:status          List applied and pending migrations
+  stats [--days 7] [--guild <id>]
+                          Show how features, commands and components are used
   deploy [--plan]         Sync slash commands with Discord (--plan: show the diff only)
   commands:clear          Remove every command from Discord
 
@@ -39,6 +42,8 @@ async function run(argv: string[]): Promise<void> {
       return migrateCommand(config, registry.features);
     case 'migrate:status':
       return migrateStatusCommand(config, registry.features);
+    case 'stats':
+      return statsCommand(config, argv);
     case 'deploy':
       return deployCommand(config, registry, { planOnly: flags.has('--plan'), global });
     case 'commands:clear':

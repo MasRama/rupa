@@ -1,5 +1,6 @@
 import type { GatewayIntentBits } from 'discord.js';
 import type { Migration } from '@/core/database';
+import { CORE_SCHEMA_NAME } from '@/core/schema';
 import type {
   CommandDefinition,
   ComponentDefinition,
@@ -33,6 +34,9 @@ const FEATURE_NAME = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 export function defineFeature(definition: FeatureDefinition): Feature {
   if (!FEATURE_NAME.test(definition.name)) {
     throw new Error(`Feature name "${definition.name}" must be kebab-case, e.g. "server-stats"`);
+  }
+  if (definition.name === CORE_SCHEMA_NAME) {
+    throw new Error(`Feature name "${CORE_SCHEMA_NAME}" is reserved for core tables`);
   }
   return Object.freeze({
     name: definition.name,

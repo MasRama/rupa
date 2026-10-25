@@ -85,3 +85,9 @@ describe('createRegistry', () => {
     expect(registry.intents()).toEqual([GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]);
   });
 });
+
+describe('reserved names', () => {
+  it('does not allow a feature named "rupa"', () => {
+    expect(() => defineFeature({ name: 'rupa' })).toThrow(/reserved/);
+  });
+});

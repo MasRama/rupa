@@ -62,7 +62,7 @@ function Figure({ label, value, note }: { label: string; value: string; note?: s
 
 export function StatsSection({ stats, scope }: { stats: StatsData; scope: 'server' | 'all' }) {
   const { summary } = stats;
-  if (summary.uses === 0) {
+  if (summary.uses === 0 && summary.blocked === 0) {
     return (
       <section class="stats empty">
         <p>
@@ -73,13 +73,17 @@ export function StatsSection({ stats, scope }: { stats: StatsData; scope: 'serve
     );
   }
 
-  const errorRate = Math.round((summary.errors / summary.uses) * 1000) / 10;
+  const errorRate =
+    summary.uses === 0 ? 0 : Math.round((summary.errors / summary.uses) * 1000) / 10;
   return (
     <section class="stats" aria-label="Usage">
       <dl class="figures">
         <Figure label="Uses" value={formatNumber(summary.uses)} />
         <Figure label="Errors" value={formatNumber(summary.errors)} note={`${errorRate}%`} />
         <Figure label="Average time" value={`${formatNumber(summary.avgMs)} ms`} />
+        {summary.blocked > 0 && (
+          <Figure label="Blocked" value={formatNumber(summary.blocked)} note="by a guard" />
+        )}
         {scope === 'all' && <Figure label="Servers" value={formatNumber(summary.guilds)} />}
         {summary.users !== null && <Figure label="People" value={formatNumber(summary.users)} />}
       </dl>

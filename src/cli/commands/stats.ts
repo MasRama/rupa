@@ -60,7 +60,7 @@ export function formatStatsReport(data: StatsReportData): string {
   const lines = [`Usage in the last ${data.days} days, ${scope}`, ''];
   const { summary } = data;
 
-  if (summary.uses === 0) {
+  if (summary.uses === 0 && summary.blocked === 0) {
     lines.push('No usage recorded in this period.');
     return lines.join('\n');
   }
@@ -71,6 +71,7 @@ export function formatStatsReport(data: StatsReportData): string {
     `  Avg time  ${summary.avgMs} ms`,
     `  Servers   ${summary.guilds}`,
     `  Users     ${summary.users ?? 'not tracked'}`,
+    `  Blocked   ${summary.blocked}`,
     '',
     `  Daily     ${sparkline(data.daily.map(day => day.uses))}  ` +
       `(${data.daily[0]?.day} → ${data.daily.at(-1)?.day})`,
@@ -79,20 +80,22 @@ export function formatStatsReport(data: StatsReportData): string {
   );
 
   const width = Math.max(...data.targets.map(row => row.target.length));
-  lines.push(`  ${'uses'.padStart(6)}  ${'errors'.padStart(6)}  ${'avg'.padStart(8)}  target`);
+  const counts = (...values: (number | string)[]) =>
+    values.map(value => String(value).padStart(7)).join(' ');
+  lines.push(`  ${counts('uses', 'errors', 'blocked')}  ${'avg'.padStart(8)}  target`);
   for (const row of data.targets) {
     lines.push(
-      `  ${String(row.uses).padStart(6)}  ${String(row.errors).padStart(6)}  ` +
+      `  ${counts(row.uses, row.errors, row.blocked)}  ` +
         `${`${row.avgMs} ms`.padStart(8)}  ${row.target.padEnd(width)}  ${row.feature}`,
     );
   }
 
   lines.push('', 'By feature');
   const featureWidth = Math.max(...data.features.map(row => row.feature.length));
-  lines.push(`  ${''.padEnd(featureWidth)}  ${'uses'.padStart(6)}  ${'errors'.padStart(6)}`);
+  lines.push(`  ${''.padEnd(featureWidth)} ${counts('uses', 'errors', 'blocked')}`);
   for (const row of data.features) {
     lines.push(
-      `  ${row.feature.padEnd(featureWidth)}  ${String(row.uses).padStart(6)}  ${String(row.errors).padStart(6)}`,
+      `  ${row.feature.padEnd(featureWidth)} ${counts(row.uses, row.errors, row.blocked)}`,
     );
   }
   return lines.join('\n');

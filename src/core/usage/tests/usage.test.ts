@@ -51,6 +51,7 @@ describe('usage store', () => {
       avgMs: 200,
       guilds: 2,
       users: null,
+      blocked: 0,
     });
   });
 
@@ -76,8 +77,24 @@ describe('usage store', () => {
     recorder.record(event({ target: '/ban', outcome: 'error' }));
 
     expect(queries.byTarget(lastWeek, 10)).toEqual([
-      { feature: 'moderation', kind: 'command', target: '/ban', uses: 2, errors: 1, avgMs: 100 },
-      { feature: 'general', kind: 'command', target: '/ping', uses: 1, errors: 0, avgMs: 100 },
+      {
+        feature: 'moderation',
+        kind: 'command',
+        target: '/ban',
+        uses: 2,
+        errors: 1,
+        blocked: 0,
+        avgMs: 100,
+      },
+      {
+        feature: 'general',
+        kind: 'command',
+        target: '/ping',
+        uses: 1,
+        errors: 0,
+        blocked: 0,
+        avgMs: 100,
+      },
     ]);
   });
 
@@ -88,8 +105,8 @@ describe('usage store', () => {
     recorder.record(event({ kind: 'button', target: 'moderation:ban/:userId/:days' }));
 
     expect(queries.byFeature(lastWeek)).toEqual([
-      { feature: 'moderation', uses: 2, errors: 0 },
-      { feature: 'general', uses: 1, errors: 0 },
+      { feature: 'moderation', uses: 2, errors: 0, blocked: 0 },
+      { feature: 'general', uses: 1, errors: 0, blocked: 0 },
     ]);
   });
 
@@ -131,6 +148,54 @@ describe('usage store', () => {
 
     expect(pruneUsage(db, 90, now)).toBe(1);
     expect(queries.summary({ since: new Date(0), until: now }).uses).toBe(1);
+  });
+});
+
+describe('blocked interactions', () => {
+  it('counts them apart from uses, errors and timings', () => {
+    const { recorder, queries } = setup();
+    recorder.record(event({ durationMs: 100 }));
+    recorder.record(event({ durationMs: 300 }));
+    recorder.record(event({ durationMs: 200, outcome: 'error' }));
+    for (let i = 0; i < 3; i++) recorder.record(event({ outcome: 'blocked', durationMs: 0 }));
+
+    expect(queries.summary(lastWeek)).toMatchObject({ uses: 3, errors: 1, blocked: 3, avgMs: 200 });
+    expect(queries.byFeature(lastWeek)).toEqual([
+      { feature: 'moderation', uses: 3, errors: 1, blocked: 3 },
+    ]);
+    expect(queries.daily({ since: new Date('2026-10-25T00:00:00Z'), until: now })).toEqual([
+      { day: '2026-10-25', uses: 3, errors: 1 },
+    ]);
+  });
+
+  it('lists a target that was only ever blocked', () => {
+    const { recorder, queries } = setup();
+    recorder.record(event({ target: '/daily', outcome: 'blocked', durationMs: 0 }));
+    recorder.record(event({ target: '/daily', outcome: 'blocked', durationMs: 0 }));
+
+    expect(queries.byTarget(lastWeek, 10)).toEqual([
+      {
+        feature: 'moderation',
+        kind: 'command',
+        target: '/daily',
+        uses: 0,
+        errors: 0,
+        blocked: 2,
+        avgMs: 0,
+      },
+    ]);
+  });
+
+  it('keeps events recorded before blocked outcomes existed', () => {
+    const db = openDatabase(':memory:');
+    const before = { ...coreSchema, migrations: coreSchema.migrations!.slice(0, 3) };
+    migrate(db, [before]);
+    createUsageRecorder(db, { trackUsers: false }).record(event());
+
+    migrate(db, [coreSchema]);
+    expect(createUsageQueries(db).summary(lastWeek).uses).toBe(1);
+    createUsageRecorder(db, { trackUsers: false }).record(event({ outcome: 'blocked' }));
+    expect(createUsageQueries(db).summary(lastWeek).blocked).toBe(1);
   });
 });
 

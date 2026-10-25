@@ -1,7 +1,8 @@
 import type { Database } from '@/core/database';
 
 export type UsageKind = 'command' | 'button' | 'select' | 'modal';
-export type UsageOutcome = 'ok' | 'error';
+/** `blocked`: a guard refused the interaction before its handler ran. */
+export type UsageOutcome = 'ok' | 'error' | 'blocked';
 
 /** One handled interaction. `target` is "/cmd sub" or a route pattern, never a raw custom id. */
 export interface UsageEvent {
@@ -31,6 +32,7 @@ export interface UsageRange {
   guildId?: string;
 }
 
+/** Counts cover handled interactions; `blocked` ones are counted apart. */
 export interface UsageSummary {
   uses: number;
   errors: number;
@@ -38,6 +40,7 @@ export interface UsageSummary {
   guilds: number;
   /** Unique users, or `null` when no user ids were stored (tracking off). */
   users: number | null;
+  blocked: number;
 }
 
 export interface TargetUsage {
@@ -46,6 +49,7 @@ export interface TargetUsage {
   target: string;
   uses: number;
   errors: number;
+  blocked: number;
   avgMs: number;
 }
 
@@ -53,6 +57,7 @@ export interface FeatureUsage {
   feature: string;
   uses: number;
   errors: number;
+  blocked: number;
 }
 
 export interface DailyUsage {
@@ -103,7 +108,12 @@ function where(range: UsageRange): { sql: string; params: string[] } {
   return { sql, params };
 }
 
-const ERRORS = "SUM(CASE WHEN outcome = 'error' THEN 1 ELSE 0 END)";
+const HANDLED = "outcome != 'blocked'";
+const count = (condition: string) => `COALESCE(SUM(CASE WHEN ${condition} THEN 1 ELSE 0 END), 0)`;
+const USES = count(HANDLED);
+const ERRORS = count("outcome = 'error'");
+const BLOCKED = count("outcome = 'blocked'");
+const AVG_MS = `COALESCE(ROUND(AVG(CASE WHEN ${HANDLED} THEN duration_ms END)), 0)`;
 
 export function createUsageQueries(db: Database): UsageQueries {
   return {
@@ -111,9 +121,10 @@ export function createUsageQueries(db: Database): UsageQueries {
       const { sql, params } = where(range);
       const row = db
         .prepare(
-          `SELECT COUNT(*) AS uses, COALESCE(${ERRORS}, 0) AS errors,
-                  COALESCE(ROUND(AVG(duration_ms)), 0) AS avgMs,
-                  COUNT(DISTINCT guild_id) AS guilds, COUNT(DISTINCT user_id) AS users
+          `SELECT ${USES} AS uses, ${ERRORS} AS errors, ${AVG_MS} AS avgMs,
+                  COUNT(DISTINCT CASE WHEN ${HANDLED} THEN guild_id END) AS guilds,
+                  COUNT(DISTINCT CASE WHEN ${HANDLED} THEN user_id END) AS users,
+                  ${BLOCKED} AS blocked
            FROM rupa_usage_events ${sql}`,
         )
         .get(...params) as Omit<UsageSummary, 'users'> & { users: number };
@@ -124,11 +135,11 @@ export function createUsageQueries(db: Database): UsageQueries {
       const { sql, params } = where(range);
       return db
         .prepare(
-          `SELECT feature, kind, target, COUNT(*) AS uses, ${ERRORS} AS errors,
-                  ROUND(AVG(duration_ms)) AS avgMs
+          `SELECT feature, kind, target, ${USES} AS uses, ${ERRORS} AS errors,
+                  ${BLOCKED} AS blocked, ${AVG_MS} AS avgMs
            FROM rupa_usage_events ${sql}
            GROUP BY feature, kind, target
-           ORDER BY uses DESC, target ASC
+           ORDER BY uses DESC, blocked DESC, target ASC
            LIMIT ?`,
         )
         .all(...params, limit) as TargetUsage[];
@@ -138,10 +149,10 @@ export function createUsageQueries(db: Database): UsageQueries {
       const { sql, params } = where(range);
       return db
         .prepare(
-          `SELECT feature, COUNT(*) AS uses, ${ERRORS} AS errors
+          `SELECT feature, ${USES} AS uses, ${ERRORS} AS errors, ${BLOCKED} AS blocked
            FROM rupa_usage_events ${sql}
            GROUP BY feature
-           ORDER BY uses DESC, feature ASC`,
+           ORDER BY uses DESC, blocked DESC, feature ASC`,
         )
         .all(...params) as FeatureUsage[];
     },
@@ -151,7 +162,7 @@ export function createUsageQueries(db: Database): UsageQueries {
       const rows = db
         .prepare(
           `SELECT substr(at, 1, 10) AS day, COUNT(*) AS uses, ${ERRORS} AS errors
-           FROM rupa_usage_events ${sql}
+           FROM rupa_usage_events ${sql} AND ${HANDLED}
            GROUP BY day`,
         )
         .all(...params) as DailyUsage[];

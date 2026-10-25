@@ -4,18 +4,34 @@ import { formatStatsReport, parseStatsArgs, type StatsReportData } from '../comm
 const data: StatsReportData = {
   days: 7,
   guildId: null,
-  summary: { uses: 3, errors: 1, avgMs: 120, guilds: 2, users: null },
+  summary: { uses: 3, errors: 1, avgMs: 120, guilds: 2, users: null, blocked: 4 },
   daily: [
     { day: '2026-10-24', uses: 1, errors: 0 },
     { day: '2026-10-25', uses: 2, errors: 1 },
   ],
   targets: [
-    { feature: 'moderation', kind: 'command', target: '/ban', uses: 2, errors: 1, avgMs: 150 },
-    { feature: 'general', kind: 'command', target: '/ping', uses: 1, errors: 0, avgMs: 60 },
+    {
+      feature: 'moderation',
+      kind: 'command',
+      target: '/ban',
+      uses: 2,
+      errors: 1,
+      blocked: 4,
+      avgMs: 150,
+    },
+    {
+      feature: 'general',
+      kind: 'command',
+      target: '/ping',
+      uses: 1,
+      errors: 0,
+      blocked: 0,
+      avgMs: 60,
+    },
   ],
   features: [
-    { feature: 'moderation', uses: 2, errors: 1 },
-    { feature: 'general', uses: 1, errors: 0 },
+    { feature: 'moderation', uses: 2, errors: 1, blocked: 4 },
+    { feature: 'general', uses: 1, errors: 0, blocked: 0 },
   ],
 };
 
@@ -27,16 +43,19 @@ describe('formatStatsReport', () => {
     expect(report).toMatch(/Errors\s+1 \(33\.3%\)/);
     expect(report).toMatch(/Avg time\s+120 ms/);
     expect(report).toMatch(/Users\s+not tracked/);
+    expect(report).toMatch(/Blocked\s+4/);
     expect(report).toContain('▅█');
   });
 
   it('lists top targets and features with their counts', () => {
     const lines = formatStatsReport(data).split('\n');
     expect(lines.find(line => line.includes('/ban'))).toMatch(
-      /2\s+1\s+150 ms\s+\/ban\s+moderation/,
+      /2\s+1\s+4\s+150 ms\s+\/ban\s+moderation/,
     );
-    expect(lines.find(line => line.includes('/ping'))).toMatch(/1\s+0\s+60 ms\s+\/ping\s+general/);
-    expect(lines.some(line => /^\s+moderation\s+2\s+1$/.test(line))).toBe(true);
+    expect(lines.find(line => line.includes('/ping'))).toMatch(
+      /1\s+0\s+0\s+60 ms\s+\/ping\s+general/,
+    );
+    expect(lines.some(line => /^\s+moderation\s+2\s+1\s+4$/.test(line))).toBe(true);
   });
 
   it('names the server when scoped', () => {
@@ -48,7 +67,7 @@ describe('formatStatsReport', () => {
   it('says so when nothing was recorded', () => {
     const empty = formatStatsReport({
       ...data,
-      summary: { uses: 0, errors: 0, avgMs: 0, guilds: 0, users: null },
+      summary: { uses: 0, errors: 0, avgMs: 0, guilds: 0, users: null, blocked: 0 },
       targets: [],
       features: [],
     });

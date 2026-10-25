@@ -89,6 +89,7 @@ export function TargetTable({ rows }: { rows: TargetUsage[] }) {
           <th>Command or component</th>
           <th class="wide">Uses</th>
           <th class="num">Errors</th>
+          <th class="num">Blocked</th>
           <th class="num">Avg time</th>
         </tr>
       </thead>
@@ -110,6 +111,7 @@ export function TargetTable({ rows }: { rows: TargetUsage[] }) {
               <Meter value={row.uses} max={max} />
             </td>
             <td class="num">{formatNumber(row.errors)}</td>
+            <td class="num">{formatNumber(row.blocked)}</td>
             <td class="num">{formatNumber(row.avgMs)} ms</td>
           </tr>
         ))}

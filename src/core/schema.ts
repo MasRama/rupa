@@ -54,5 +54,30 @@ export const coreSchema: MigrationSource = {
         CREATE INDEX rupa_sessions_expires_at ON rupa_sessions (expires_at);
       `,
     },
+    {
+      // SQLite cannot change a CHECK constraint in place, so the table is rebuilt.
+      id: '004_allow_blocked_usage',
+      up: `
+        CREATE TABLE rupa_usage_events_next (
+          id          INTEGER PRIMARY KEY,
+          at          TEXT NOT NULL,
+          feature     TEXT NOT NULL,
+          kind        TEXT NOT NULL CHECK (kind IN ('command', 'button', 'select', 'modal')),
+          target      TEXT NOT NULL,
+          guild_id    TEXT,
+          user_id     TEXT,
+          outcome     TEXT NOT NULL CHECK (outcome IN ('ok', 'error', 'blocked')),
+          duration_ms INTEGER NOT NULL
+        );
+        INSERT INTO rupa_usage_events_next
+          (id, at, feature, kind, target, guild_id, user_id, outcome, duration_ms)
+          SELECT id, at, feature, kind, target, guild_id, user_id, outcome, duration_ms
+          FROM rupa_usage_events;
+        DROP TABLE rupa_usage_events;
+        ALTER TABLE rupa_usage_events_next RENAME TO rupa_usage_events;
+        CREATE INDEX rupa_usage_events_at ON rupa_usage_events (at);
+        CREATE INDEX rupa_usage_events_guild_at ON rupa_usage_events (guild_id, at);
+      `,
+    },
   ],
 };

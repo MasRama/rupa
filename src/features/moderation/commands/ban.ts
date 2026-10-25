@@ -8,7 +8,7 @@ import {
   PermissionFlagsBits,
   SlashCommandBuilder,
 } from 'discord.js';
-import { command } from '@/core';
+import { command, requireBotPermissions } from '@/core';
 import { cancelBan, confirmBan } from '../components/ban';
 import { moderationBlocker } from '../hierarchy';
 import { ephemeral } from '../replies';
@@ -30,6 +30,8 @@ export const banCommand = command({
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
     .setContexts(InteractionContextType.Guild),
+
+  guards: [requireBotPermissions(PermissionFlagsBits.BanMembers)],
 
   async execute(interaction) {
     if (!interaction.inCachedGuild()) return;

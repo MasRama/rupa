@@ -1,5 +1,5 @@
 import { InteractionContextType, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
-import { command } from '@/core';
+import { command, requireBotPermissions } from '@/core';
 import { moderationBlocker } from '../hierarchy';
 import { caseEmbed, ephemeral, notifyMember, postToLogChannel } from '../replies';
 import { createCaseRepository } from '../repository';
@@ -17,6 +17,8 @@ export const kickCommand = command({
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers)
     .setContexts(InteractionContextType.Guild),
+
+  guards: [requireBotPermissions(PermissionFlagsBits.KickMembers)],
 
   async execute(interaction, ctx) {
     if (!interaction.inCachedGuild()) return;

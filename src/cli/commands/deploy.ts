@@ -24,6 +24,18 @@ function resolveTarget(config: AppConfig, global: boolean): { rest: REST; target
 }
 
 /**
+ * Current commands on Discord. Without `with_localizations` Discord omits the
+ * localization maps, and every localized command would look changed.
+ */
+export async function fetchRemoteCommands(
+  rest: Pick<REST, 'get'>,
+  route: `/${string}`,
+): Promise<RemoteCommand[]> {
+  const query = new URLSearchParams({ with_localizations: 'true' });
+  return (await rest.get(route, { query })) as RemoteCommand[];
+}
+
+/**
  * Shows what would change on Discord and, unless `planOnly`, applies it with
  * one bulk overwrite. Sends nothing when the plan is empty.
  */
@@ -34,7 +46,7 @@ export async function deployCommand(
 ): Promise<void> {
   const { rest, target } = resolveTarget(config, options.global);
   const local = buildCommandPayloads(registry);
-  const remote = (await rest.get(target.route)) as RemoteCommand[];
+  const remote = await fetchRemoteCommands(rest, target.route);
   const plan = planCommandDeploy(local, remote);
 
   console.log(`Command plan for ${target.label}:`);

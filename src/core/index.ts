@@ -18,3 +18,14 @@ export type { RouteParams } from './routing/pattern';
 export type { FeatureRegistry } from './routing/registry';
 export type { Database, Migration } from './database';
 export type { Logger } from './logging';
+export {
+  createUsageQueries,
+  sparkline,
+  usageWindow,
+  type DailyUsage,
+  type FeatureUsage,
+  type TargetUsage,
+  type UsageQueries,
+  type UsageRange,
+  type UsageSummary,
+} from './usage';

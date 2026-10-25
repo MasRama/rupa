@@ -7,6 +7,8 @@ import {
   createUsageRecorder,
   pruneUsage,
   scheduleUsagePruning,
+  sparkline,
+  usageWindow,
   type UsageEvent,
 } from '../index';
 
@@ -19,7 +21,7 @@ function setup(trackUsers = false) {
   return {
     db,
     recorder: createUsageRecorder(db, { trackUsers }),
-    queries: createUsageQueries(db, { trackUsers }),
+    queries: createUsageQueries(db),
   };
 }
 
@@ -52,7 +54,7 @@ describe('usage store', () => {
     });
   });
 
-  it('counts unique users only when user tracking is on', () => {
+  it('counts unique users only when user ids were stored', () => {
     const { recorder, queries, db } = setup(true);
     recorder.record(event({ userId: 'u1' }));
     recorder.record(event({ userId: 'u1' }));
@@ -152,5 +154,25 @@ describe('scheduleUsagePruning', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('sparkline', () => {
+  it('scales values to block characters, keeping zero at the floor', () => {
+    expect(sparkline([0, 1, 2, 4])).toBe('▁▃▅█');
+  });
+
+  it('draws a flat line when nothing happened', () => {
+    expect(sparkline([0, 0, 0])).toBe('▁▁▁');
+  });
+});
+
+describe('usageWindow', () => {
+  it('covers exactly the last N calendar days in UTC, today included', () => {
+    const range = usageWindow(7, now);
+    expect(range).toEqual({ since: new Date('2026-10-19T00:00:00Z'), until: now });
+
+    const { queries } = setup();
+    expect(queries.daily(range)).toHaveLength(7);
   });
 });

@@ -36,7 +36,7 @@ export interface UsageSummary {
   errors: number;
   avgMs: number;
   guilds: number;
-  /** Unique users, or `null` when user tracking is off. */
+  /** Unique users, or `null` when no user ids were stored (tracking off). */
   users: number | null;
 }
 
@@ -105,7 +105,7 @@ function where(range: UsageRange): { sql: string; params: string[] } {
 
 const ERRORS = "SUM(CASE WHEN outcome = 'error' THEN 1 ELSE 0 END)";
 
-export function createUsageQueries(db: Database, options: UsageOptions): UsageQueries {
+export function createUsageQueries(db: Database): UsageQueries {
   return {
     summary(range) {
       const { sql, params } = where(range);
@@ -117,7 +117,7 @@ export function createUsageQueries(db: Database, options: UsageOptions): UsageQu
            FROM rupa_usage_events ${sql}`,
         )
         .get(...params) as Omit<UsageSummary, 'users'> & { users: number };
-      return { ...row, users: options.trackUsers ? row.users : null };
+      return { ...row, users: row.users > 0 ? row.users : null };
     },
 
     byTarget(range, limit) {
@@ -174,4 +174,10 @@ export function createUsageQueries(db: Database, options: UsageOptions): UsageQu
 export function pruneUsage(db: Database, retentionDays: number, now: Date = new Date()): number {
   const cutoff = new Date(now.getTime() - retentionDays * DAY_MS).toISOString();
   return db.prepare('DELETE FROM rupa_usage_events WHERE at < ?').run(cutoff).changes;
+}
+
+/** The last `days` calendar days in UTC, today included, ending at `now`. */
+export function usageWindow(days: number, now: Date = new Date()): UsageRange & { until: Date } {
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return { since: new Date(today - (days - 1) * DAY_MS), until: now };
 }

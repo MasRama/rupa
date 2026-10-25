@@ -12,7 +12,8 @@ export function createDiscordAccess(client: Client, ownerIds: readonly string[])
       const guild = client.guilds.cache.get(guildId);
       if (!guild) return false;
       if (guild.ownerId === userId) return true;
-      const member = await guild.members.fetch(userId).catch(() => null);
+      // force: with only the Guilds intent, member updates never reach the cache.
+      const member = await guild.members.fetch({ user: userId, force: true }).catch(() => null);
       return member?.permissions.has(PermissionFlagsBits.ManageGuild) ?? false;
     },
 

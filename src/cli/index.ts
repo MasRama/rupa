@@ -2,6 +2,7 @@ import { features } from '@/app/features';
 import { ConfigError, loadConfig, loadEnvFile } from '@/core/config';
 import { createRegistry } from '@/core/routing/registry';
 import { clearCommands, deployCommand } from './commands/deploy';
+import { jobsCommand } from './commands/jobs';
 import { makeFeatureCommand } from './commands/make-feature';
 import { migrateCommand, migrateStatusCommand } from './commands/migrate';
 import { statsCommand } from './commands/stats';
@@ -14,6 +15,7 @@ Commands:
   migrate:status          List applied and pending migrations
   stats [--days 7] [--guild <id>]
                           Show how features, commands and components are used
+  jobs                    List scheduled and failed jobs
   deploy [--plan]         Sync slash commands with Discord (--plan: show the diff only)
   commands:clear          Remove every command from Discord
 
@@ -44,6 +46,8 @@ async function run(argv: string[]): Promise<void> {
       return migrateStatusCommand(config, registry.features);
     case 'stats':
       return statsCommand(config, argv);
+    case 'jobs':
+      return jobsCommand(config);
     case 'deploy':
       return deployCommand(config, registry, { planOnly: flags.has('--plan'), global });
     case 'commands:clear':

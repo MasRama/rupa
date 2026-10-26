@@ -50,6 +50,7 @@ export const features: Feature[] = [
   moderation,
   reminders,
   tickets,
+  roles,
   guilds,
   stats,
   dashboard,
@@ -100,3 +101,10 @@ The opener or staff close a ticket with the thread's **Close** button or `/ticke
 - The bot needs **Create Private Threads**, **Send Messages in Threads** and **Manage Threads** in the panel's channel.
 - Settings: the staff role (mentioned in new tickets and allowed to close any), the log channel, and **Close idle tickets after (hours)**, which is off at 0. Staff only see a ticket when they are mentioned, so set the staff role.
 - Deleting a ticket thread by hand closes its ticket.
+
+### Role picker
+
+`/roles panel` (Manage Roles) posts a panel with up to ten roles and a **Choose roles** button. Clicking it opens a private menu with the roles the member already has ticked; the bot then adds and removes roles to match. With `single`, a member holds at most one of the panel's roles.
+
+- The bot needs **Manage Roles**, and every role on a panel must be below the bot's highest role. Panels refuse `@everyone` and roles that belong to a bot or an integration.
+- A role deleted later disappears from the menu. One that moved above the bot is skipped, and the member is told.

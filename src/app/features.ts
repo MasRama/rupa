@@ -4,6 +4,7 @@ import { general } from '@/features/general';
 import { guilds } from '@/features/guilds';
 import { moderation } from '@/features/moderation';
 import { reminders } from '@/features/reminders';
+import { roles } from '@/features/roles';
 import { stats } from '@/features/stats';
 import { tickets } from '@/features/tickets';
 
@@ -17,6 +18,7 @@ export const features: Feature[] = [
   moderation,
   reminders,
   tickets,
+  roles,
   guilds,
   stats,
   dashboard,

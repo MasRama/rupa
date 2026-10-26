@@ -86,6 +86,7 @@ src/
     ├── moderation/        # /kick /ban (temporary too) /warn /clear /cases, Warn and Report menus
     ├── reminders/         # /remind, delivered later by a scheduled job
     ├── tickets/           # support tickets in private threads, with auto-close
+    ├── roles/             # /roles panel: members pick their own roles
     ├── guilds/            # tracks servers the bot is in (events + SQLite)
     ├── stats/             # /stats for server managers
     └── dashboard/         # web pages, active when DASHBOARD_PORT is set

@@ -1,6 +1,6 @@
 {
   "name": "rupa",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Feature-first Discord bot kit. Build by feature, route every interaction, own your SQLite.",
   "license": "MIT",

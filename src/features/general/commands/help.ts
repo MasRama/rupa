@@ -1,4 +1,10 @@
-import { EmbedBuilder, MessageFlags, SlashCommandBuilder, type APIEmbedField } from 'discord.js';
+import {
+  EmbedBuilder,
+  escapeMarkdown,
+  MessageFlags,
+  SlashCommandBuilder,
+  type APIEmbedField,
+} from 'discord.js';
 import { command, type FeatureRegistry } from '@/core';
 
 /** Slash commands grouped by the feature that provides them, then right-click menus. */
@@ -14,7 +20,7 @@ export function helpFields(registry: FeatureRegistry): APIEmbedField[] {
   if (registry.menus.length > 0) {
     const menus = registry.menus.map(({ definition }) => {
       const on = definition.type === 'user-command' ? 'a user' : 'a message';
-      return `**${definition.data.name}** on ${on}`;
+      return `**${escapeMarkdown(definition.data.name)}** on ${on}`;
     });
     fields.push({ name: 'Right-click menus', value: menus.join('\n') });
   }

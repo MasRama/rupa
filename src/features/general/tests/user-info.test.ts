@@ -1,10 +1,13 @@
 import {
+  ApplicationCommandType,
   ApplicationIntegrationType,
+  ContextMenuCommandBuilder,
   InteractionContextType,
   type GuildMember,
   type User,
 } from 'discord.js';
 import { describe, expect, it } from 'vitest';
+import { defineFeature, userCommand } from '@/core';
 import { createRegistry } from '@/core/routing/registry';
 import { helpFields } from '../commands/help';
 import { userInfoMenu } from '../commands/user-info-menu';
@@ -79,5 +82,22 @@ describe('helpFields', () => {
     expect(fields.at(0)?.name).toBe('general');
     expect(fields.at(0)?.value).toContain('`/ping`');
     expect(fields.at(-1)).toEqual({ name: 'Right-click menus', value: '**User info** on a user' });
+  });
+
+  it('escapes Markdown in menu names', () => {
+    const feature = defineFeature({
+      name: 'demo',
+      commands: [
+        userCommand({
+          data: new ContextMenuCommandBuilder()
+            .setName('Rate *this*')
+            .setType(ApplicationCommandType.User),
+          execute: () => undefined,
+        }),
+      ],
+    });
+    expect(helpFields(createRegistry([feature])).at(-1)?.value).toBe(
+      '**Rate \\*this\\*** on a user',
+    );
   });
 });

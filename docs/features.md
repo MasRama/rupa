@@ -43,16 +43,17 @@ Every field except `name` is optional. The name `rupa` is reserved for core's ow
 
 ```ts
 // src/app/features.ts
-import { tickets } from '@/features/tickets';
+import { polls } from '@/features/polls';
 
 export const features: Feature[] = [
   general,
   moderation,
   reminders,
+  tickets,
   guilds,
   stats,
   dashboard,
-  tickets,
+  polls,
 ];
 ```
 
@@ -63,10 +64,10 @@ At startup Rupa refuses to run if two features register the same slash command n
 ## Scaffolding
 
 ```bash
-npm run rupa -- make feature tickets
+npm run rupa -- make feature polls
 ```
 
-This creates `index.ts`, a `/tickets` command, an empty `migrations.ts` and a test. It then prints the two lines to add to `src/app/features.ts`. Rupa does not edit the composition root for you.
+This creates `index.ts`, a `/polls` command, an empty `migrations.ts` and a test. It then prints the two lines to add to `src/app/features.ts`. Rupa does not edit the composition root for you.
 
 ## Handler context
 
@@ -85,3 +86,17 @@ Every handler receives a context after its Discord arguments:
 ## Testing a feature
 
 Put pure logic (permission rules, formatting, SQL) in plain functions and test them with Vitest. Repositories can run against `openDatabase(':memory:')` after `migrate(db, [yourFeature])`. See `src/features/moderation/tests` for both kinds.
+
+## The example features
+
+The features in `src/features` are meant to be read, kept or deleted. Two of them need a little setup in Discord:
+
+### Tickets
+
+`/ticket panel` (Manage Server) posts a **Need help?** message with an **Open ticket** button in the current text channel. A member who clicks it describes the problem in a form, and the bot opens a private thread `ticket-0001` with them, mentioning the staff role. One member can have one open ticket per server.
+
+The opener or staff close a ticket with the thread's **Close** button or `/ticket close`, after a confirmation. The thread is locked and archived, so it stays readable as the record, and a summary goes to the log channel. Message content is not copied, because reading it needs the privileged Message Content intent.
+
+- The bot needs **Create Private Threads**, **Send Messages in Threads** and **Manage Threads** in the panel's channel.
+- Settings: the staff role (mentioned in new tickets and allowed to close any), the log channel, and **Close idle tickets after (hours)**, which is off at 0. Staff only see a ticket when they are mentioned, so set the staff role.
+- Deleting a ticket thread by hand closes its ticket.

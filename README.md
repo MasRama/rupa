@@ -24,7 +24,15 @@ await interaction.reply({
 });
 
 // src/app/features.ts
-export const features: Feature[] = [general, moderation, reminders, guilds, stats, dashboard];
+export const features: Feature[] = [
+  general,
+  moderation,
+  reminders,
+  tickets,
+  guilds,
+  stats,
+  dashboard,
+];
 ```
 
 ## Why Rupa
@@ -77,6 +85,7 @@ src/
     ├── general/           # /ping /info /help /userinfo /serverinfo, User info menu
     ├── moderation/        # /kick /ban (temporary too) /warn /clear /cases, Warn and Report menus
     ├── reminders/         # /remind, delivered later by a scheduled job
+    ├── tickets/           # support tickets in private threads, with auto-close
     ├── guilds/            # tracks servers the bot is in (events + SQLite)
     ├── stats/             # /stats for server managers
     └── dashboard/         # web pages, active when DASHBOARD_PORT is set

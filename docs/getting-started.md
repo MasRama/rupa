@@ -50,7 +50,7 @@ Type `/help` in your server.
 ## 5. Make it yours
 
 - Remove the example features you do not want from `src/app/features.ts` and delete their folders.
-- Scaffold your own with `npm run rupa -- make feature tickets`, and read [features.md](./features.md).
+- Scaffold your own with `npm run rupa -- make feature polls`, and read [features.md](./features.md).
 - Run `npm run deploy` again whenever commands change.
 
 ## Running in production

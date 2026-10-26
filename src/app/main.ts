@@ -90,7 +90,11 @@ async function main(): Promise<void> {
   });
 
   logger.info(
-    { features: registry.features.map(feature => feature.name), commands: registry.commands.size },
+    {
+      features: registry.features.map(feature => feature.name),
+      commands: registry.commands.size,
+      menus: registry.menus.length,
+    },
     'Starting Rupa',
   );
   try {

@@ -1,6 +1,6 @@
 # Interactions and routes
 
-Everything a user can trigger is declared with a helper from `@/core`: `command`, `userCommand` and `messageCommand` ([context-menus.md](./context-menus.md)), `button`, `select` and `modal`, and `event`. Long lists can use `pages` ([pagination.md](./pagination.md)).
+Everything a user can trigger is declared with a helper from `@/core`: `command`, `userCommand` and `messageCommand` ([context-menus.md](./context-menus.md)), `button`, `select` and `modal`, and `event`. Long lists can use `pages` ([pagination.md](./pagination.md)), and risky actions can ask first with `confirm` ([confirmations.md](./confirmations.md)).
 
 ## Slash commands
 
@@ -12,7 +12,9 @@ export const remind = command({
   data: new SlashCommandBuilder()
     .setName('remind')
     .setDescription('Set a reminder')
-    .addStringOption(option => option.setName('topic').setDescription('Topic').setAutocomplete(true)),
+    .addStringOption(option =>
+      option.setName('topic').setDescription('Topic').setAutocomplete(true),
+    ),
 
   async execute(interaction, ctx) {
     await interaction.reply(`Okay: ${interaction.options.getString('topic')}`);

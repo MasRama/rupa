@@ -2,14 +2,13 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  MessageFlags,
   type APIEmbed,
-  type ButtonInteraction,
   type JSONEncodable,
   type RepliableInteraction,
 } from 'discord.js';
 import { button, type ComponentDefinition, type HandlerContext } from './definitions';
 import type { Guard } from './guards';
+import { onlyOpener } from './opener';
 import type { RouteParams } from './pattern';
 
 type Awaitable<T> = T | Promise<T>;
@@ -79,15 +78,7 @@ export function pageWindow(total: number, pageSize: number, requested: number): 
   return { page, pageCount, total, offset: (page - 1) * pageSize, limit: pageSize };
 }
 
-const NOT_YOURS = 'Only the person who opened this list can turn its pages.';
-
-/** On a public message, only the user who ran the original command may turn pages. */
-const onlyOpener: Guard = interaction => {
-  const { message } = interaction as ButtonInteraction;
-  if (!message || message.flags.has(MessageFlags.Ephemeral)) return null;
-  const openerId = message.interactionMetadata?.user.id;
-  return openerId && openerId !== interaction.user.id ? NOT_YOURS : null;
-};
+const opener = onlyOpener('Only the person who opened this list can turn its pages.');
 
 /**
  * A list split into pages with ◀ ▶ buttons. The page number lives in the
@@ -138,7 +129,7 @@ export function pages<Pattern extends string>(
       const message = await render(Number(page), params as RouteParams<Pattern>, ctx, interaction);
       await interaction.update(message);
     },
-    { guards: [onlyOpener, ...(options.guards ?? [])] },
+    { guards: [opener, ...(options.guards ?? [])] },
   );
 
   return {

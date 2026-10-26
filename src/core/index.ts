@@ -37,6 +37,7 @@ export {
   type TaskDefinition,
   type TaskSchedule,
 } from './jobs';
+export { confirm, type Confirm, type ConfirmOptions } from './routing/confirm';
 export {
   pages,
   pageWindow,

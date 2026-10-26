@@ -34,6 +34,7 @@ export const features: Feature[] = [general, moderation, reminders, guilds, stat
 - **Deploys you can read first.** `npm run deploy:plan` shows which slash commands would be added, changed or removed before anything is sent to Discord.
 - **Right-click commands and user installs.** `userCommand` and `messageCommand` add Apps menu entries with the same guards, stats and deploy plan as slash commands, and commands can be installed to a user's account to work outside the bot's servers.
 - **Pagination that survives restarts.** `pages()` adds ◀ ▶ buttons whose page lives in the route, so every click re-reads the database.
+- **Confirmations in one line.** `confirm()` puts Confirm and Cancel buttons on a risky action, checks who answers and lets the question expire.
 - **Usage stats built in.** The router records every handled command and component, so `npm run rupa -- stats` and `/stats` show what is actually used, per feature and per server. User ids are only stored if you opt in.
 - **Per-server settings.** `defineSettings` gives a feature typed, validated settings that each server sets for itself.
 - **An optional dashboard.** Set `DASHBOARD_PORT` and server managers sign in with Discord to see their server's usage and edit settings. It is server-rendered and runs in the bot process.
@@ -95,6 +96,7 @@ src/
 - [Interactions and routes](./docs/interactions.md)
 - [Right-click commands and user installs](./docs/context-menus.md)
 - [Pagination](./docs/pagination.md)
+- [Confirmations](./docs/confirmations.md)
 - [Guards and cooldowns](./docs/guards.md)
 - [Jobs and tasks](./docs/jobs.md)
 - [Database](./docs/database.md)

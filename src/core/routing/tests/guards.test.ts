@@ -107,6 +107,20 @@ describe('requireBotPermissions', () => {
       'I need the Kick Members permission in this channel.',
     );
   });
+
+  it('asks to be added to the server when only installed to the user', async () => {
+    const guard = requireBotPermissions(PermissionFlagsBits.KickMembers);
+    expect(await guard(as({ appPermissions: [], userInstallOnly: true }), ctx())).toBe(
+      'Add me to this server to use this here.',
+    );
+    const embeds = requireBotPermissions(PermissionFlagsBits.EmbedLinks);
+    expect(
+      await embeds(
+        as({ appPermissions: [PermissionFlagsBits.EmbedLinks], userInstallOnly: true }),
+        ctx(),
+      ),
+    ).toBeNull();
+  });
 });
 
 describe('permissionName', () => {

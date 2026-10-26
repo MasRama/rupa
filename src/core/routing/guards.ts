@@ -1,4 +1,8 @@
-import { PermissionFlagsBits, type RepliableInteraction } from 'discord.js';
+import {
+  ApplicationIntegrationType,
+  PermissionFlagsBits,
+  type RepliableInteraction,
+} from 'discord.js';
 import { parseDuration } from '@/core/time';
 import type { HandlerContext } from './definitions';
 
@@ -85,10 +89,19 @@ export function requirePermissions(...permissions: bigint[]): Guard {
   };
 }
 
-/** The bot must have every permission in the channel where it was used. */
+/**
+ * The bot must have every permission in the channel where it was used. In a
+ * server the bot was not added to (a user install), it asks to be added.
+ */
 export function requireBotPermissions(...permissions: bigint[]): Guard {
   return interaction => {
     const missing = permissions.filter(flag => !interaction.appPermissions.has(flag));
-    return missing.length === 0 ? null : `I need ${listPermissions(missing)} in this channel.`;
+    if (missing.length === 0) return null;
+    const inServerWithoutBot =
+      interaction.guildId !== null &&
+      interaction.authorizingIntegrationOwners[ApplicationIntegrationType.GuildInstall] ===
+        undefined;
+    if (inServerWithoutBot) return 'Add me to this server to use this here.';
+    return `I need ${listPermissions(missing)} in this channel.`;
   };
 }

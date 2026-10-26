@@ -34,7 +34,7 @@ export const unbanButton = button('moderation:unban/:userId', handler, {
 | `requirePermissions(flag, ...)`      | the member lacks a permission in this channel, or it is a DM      |
 | `requireBotPermissions(flag, ...)`   | the bot lacks a permission in this channel                        |
 
-The refusal messages name permissions the way Discord's server settings do, for example "I need the Ban Members permission in this channel."
+The refusal messages name permissions the way Discord's server settings do, for example "I need the Ban Members permission in this channel." When a user-installed command runs in a server the bot was not added to, `requireBotPermissions` says "Add me to this server to use this here." instead, because no channel permission would help.
 
 `cooldown` counts per command: `/userinfo` and `/serverinfo` with the same guard have separate cooldowns. The cooldown lives in memory, so restarting the bot resets it. That is fine for spam protection. For a limit that must hold across restarts (one daily reward per user), store the time in your feature's table.
 

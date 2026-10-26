@@ -67,5 +67,6 @@ When a command comes from a user install in a server the bot is not in, the inte
 - Do not depend on the guild, its members or its channels. **User info** shows the account without server details in that case.
 - Deliver later messages by DM. Reminders try the original channel and fall back to a DM.
 - Leave guild-only features, such as moderation, as server installs with the `Guild` context.
+- `requireBotPermissions` refuses there with "Add me to this server to use this here." when the bot lacks a permission.
 
 `/userinfo`, **User info** and `/remind` are user-installable in the example features.

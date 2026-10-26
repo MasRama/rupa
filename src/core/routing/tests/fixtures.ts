@@ -1,5 +1,6 @@
 import {
   ApplicationCommandType,
+  ApplicationIntegrationType,
   ContextMenuCommandBuilder,
   PermissionsBitField,
   SlashCommandBuilder,
@@ -52,6 +53,8 @@ export function stubInteraction(
     memberPermissions?: bigint[] | null;
     /** Permissions of the bot in the channel. Defaults to all. */
     appPermissions?: bigint[];
+    /** The app is installed to the user only, not to the server. */
+    userInstallOnly?: boolean;
   } = {},
 ) {
   const isCommand = ['command', 'autocomplete', 'user-menu', 'message-menu'].includes(kind);
@@ -65,6 +68,12 @@ export function stubInteraction(
         ? null
         : new PermissionsBitField(options.memberPermissions ?? PermissionsBitField.All),
     appPermissions: new PermissionsBitField(options.appPermissions ?? PermissionsBitField.All),
+    authorizingIntegrationOwners: options.userInstallOnly
+      ? { [ApplicationIntegrationType.UserInstall]: options.userId ?? 'user-1' }
+      : {
+          [ApplicationIntegrationType.GuildInstall]:
+            options.guildId === undefined ? 'guild-1' : (options.guildId ?? '0'),
+        },
     commandName: isCommand ? key : undefined,
     customId: isCommand ? undefined : key,
     options: {

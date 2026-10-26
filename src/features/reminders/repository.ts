@@ -90,6 +90,14 @@ export function createReminderRepository(db: Database) {
       );
     },
 
+    /** Removes all of a user's reminders; returns the numbers that were removed. */
+    removeAllForUser(userId: string): number[] {
+      const rows = db
+        .prepare('DELETE FROM reminders_items WHERE user_id = ? RETURNING id')
+        .all(userId) as { id: number }[];
+      return rows.map(row => row.id).sort((a, b) => a - b);
+    },
+
     /** Forgets a reminder once it has been delivered. */
     delete(id: number): void {
       db.prepare('DELETE FROM reminders_items WHERE id = ?').run(id);

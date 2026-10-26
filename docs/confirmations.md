@@ -47,4 +47,4 @@ The buttons are ordinary [routes](./interactions.md) with a `/:choice` segment, 
 
 Keep the route short: the params and `/yes` must fit in Discord's 100-character custom id. Put long text such as a reason in the message, and read it back from `interaction.message` in `onConfirm`.
 
-`/ban` in the example moderation feature uses it.
+`/ban` and `/remind clear` in the example features use it.

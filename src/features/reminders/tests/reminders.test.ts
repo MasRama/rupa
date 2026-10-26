@@ -8,7 +8,7 @@ import { stubLogger } from '@/core/routing/tests/fixtures';
 import { coreSchema } from '@/core/schema';
 import { reminders } from '../index';
 import { formatReminderList, parseReminder } from '../input';
-import { remindCommand, reminderPages } from '../commands/remind';
+import { clearConfirm, remindCommand, reminderPages } from '../commands/remind';
 import { deliver } from '../jobs';
 import { createReminderRepository } from '../repository';
 
@@ -97,6 +97,29 @@ describe('reminder repository', () => {
     expect(repository.remove(id, 'u1')).toBe(true);
     expect(repository.get(id)).toBeNull();
   });
+
+  it("removes all of a user's reminders at once and says which", () => {
+    const { repository, id } = setup(null);
+    const second = repository.add({
+      userId: 'u1',
+      guildId: null,
+      channelId: 'c2',
+      text: 'water',
+      remindAt: new Date('2026-10-25T13:00:00Z'),
+    });
+    repository.add({
+      userId: 'u2',
+      guildId: null,
+      channelId: 'c2',
+      text: 'not yours',
+      remindAt: new Date('2026-10-25T13:00:00Z'),
+    });
+
+    expect(repository.removeAllForUser('u1')).toEqual([id, second]);
+    expect(repository.countForUser('u1')).toBe(0);
+    expect(repository.countForUser('u2')).toBe(1);
+    expect(repository.removeAllForUser('u1')).toEqual([]);
+  });
 });
 
 describe('deliver job', () => {
@@ -168,5 +191,35 @@ describe('/remind everywhere', () => {
     expect(first.content?.split('\n')).toHaveLength(10);
     expect(first.components).toHaveLength(1);
     expect(reminders.components).toContain(reminderPages);
+  });
+});
+
+describe('/remind clear', () => {
+  it('is a subcommand that asks before deleting', () => {
+    const body = remindCommand.data.toJSON();
+    expect(body.options?.map(option => option.name)).toEqual(['set', 'list', 'cancel', 'clear']);
+    expect(reminders.components).toContain(clearConfirm);
+    const row = clearConfirm.buttons().toJSON() as { components: { label: string }[] };
+    expect(row.components.map(button => button.label)).toEqual(['Delete all', 'Cancel']);
+  });
+
+  it('deletes every reminder of the user and cancels their deliveries', async () => {
+    const { ctx, repository, id } = setup(null);
+    const cancel = vi.spyOn(ctx.jobs, 'cancel');
+    const update = vi.fn(async (_message: unknown) => undefined);
+    const interaction = {
+      user: { id: 'u1' },
+      message: { createdTimestamp: Date.now() },
+      update,
+    } as never;
+
+    await clearConfirm.handle(interaction, { ...ctx, params: { choice: 'yes' } });
+
+    expect(repository.countForUser('u1')).toBe(0);
+    expect(cancel).toHaveBeenCalledWith(deliver, `${id}`);
+    expect(update).toHaveBeenCalledWith({
+      content: 'Deleted 1 reminder(s).',
+      components: [],
+    });
   });
 });

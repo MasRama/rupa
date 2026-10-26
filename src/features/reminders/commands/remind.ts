@@ -5,7 +5,7 @@ import {
   MessageFlags,
   SlashCommandBuilder,
 } from 'discord.js';
-import { command, cooldown, pages, type HandlerContext } from '@/core';
+import { command, confirm, cooldown, pages, type HandlerContext } from '@/core';
 import { formatReminderList, parseReminder } from '../input';
 import { deliver } from '../jobs';
 import { createReminderRepository } from '../repository';
@@ -49,6 +49,7 @@ export const remindCommand = command({
             .setRequired(true),
         ),
     )
+    .addSubcommand(sub => sub.setName('clear').setDescription('Delete all of your reminders'))
     // Installable to user accounts too, so it works in any server, DM or group DM.
     .setIntegrationTypes(
       ApplicationIntegrationType.GuildInstall,
@@ -67,6 +68,7 @@ export const remindCommand = command({
     if (subcommand === 'set') await set(interaction, ctx);
     else if (subcommand === 'list') await list(interaction, ctx);
     else if (subcommand === 'cancel') await cancel(interaction, ctx);
+    else if (subcommand === 'clear') await clear(interaction, ctx);
   },
 });
 
@@ -119,4 +121,28 @@ async function cancel(interaction: ChatInputCommandInteraction, ctx: HandlerCont
   }
   ctx.jobs.cancel(deliver, `${id}`);
   await reply(interaction, `Reminder #${id} cancelled.`);
+}
+
+/** "Delete all" on the question asked by /remind clear. */
+export const clearConfirm = confirm('reminders:clear', {
+  confirmLabel: 'Delete all',
+  cancelled: 'Kept your reminders.',
+  async onConfirm(interaction, ctx) {
+    const removed = createReminderRepository(ctx.db).removeAllForUser(interaction.user.id);
+    for (const id of removed) ctx.jobs.cancel(deliver, `${id}`);
+    await interaction.update({ content: `Deleted ${removed.length} reminder(s).`, components: [] });
+  },
+});
+
+async function clear(interaction: ChatInputCommandInteraction, ctx: HandlerContext) {
+  const count = createReminderRepository(ctx.db).countForUser(interaction.user.id);
+  if (count === 0) {
+    await reply(interaction, 'You have no reminders.');
+    return;
+  }
+  await interaction.reply({
+    content: `Delete all ${count} of your reminders? This cannot be undone.`,
+    components: [clearConfirm.buttons()],
+    flags: MessageFlags.Ephemeral,
+  });
 }

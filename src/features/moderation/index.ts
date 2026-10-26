@@ -5,7 +5,7 @@ import { clearCommand } from './commands/clear';
 import { kickCommand } from './commands/kick';
 import { reportMenu } from './commands/report';
 import { warnCommand, warnMenu } from './commands/warn';
-import { cancelBan, confirmBan } from './components/ban';
+import { banConfirm } from './components/ban';
 import { warnReason } from './components/warn';
 import { unban } from './jobs';
 import { migrations } from './migrations';
@@ -26,7 +26,7 @@ export const moderation = defineFeature({
     warnMenu,
     reportMenu,
   ],
-  components: [confirmBan, cancelBan, warnReason, casePages],
+  components: [banConfirm, warnReason, casePages],
   migrations,
   jobs: [unban],
   settings: moderationSettings,

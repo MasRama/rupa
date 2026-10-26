@@ -18,12 +18,12 @@ export const kickCommand = command({
 Components take guards as a third argument:
 
 ```ts
-export const confirmBan = button('moderation:ban/:userId', handler, {
+export const unbanButton = button('moderation:unban/:userId', handler, {
   guards: [requireBotPermissions(PermissionFlagsBits.BanMembers)],
 });
 ```
 
-Guards run in order, and the first refusal wins. They do not run for autocomplete.
+[`confirm()`](./confirmations.md) and [`pages()`](./pagination.md) take `guards` in their options. Guards run in order, and the first refusal wins. They do not run for autocomplete.
 
 ## Built-in guards
 

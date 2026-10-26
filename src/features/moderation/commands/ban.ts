@@ -1,7 +1,4 @@
 import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   EmbedBuilder,
   InteractionContextType,
   MessageFlags,
@@ -9,7 +6,7 @@ import {
   SlashCommandBuilder,
 } from 'discord.js';
 import { command, formatDuration, requireBotPermissions } from '@/core';
-import { cancelBan, confirmBan } from '../components/ban';
+import { banConfirm } from '../components/ban';
 import { parseBanDuration } from '../duration';
 import { moderationBlocker } from '../hierarchy';
 import { ephemeral } from '../replies';
@@ -77,22 +74,11 @@ export const banCommand = command({
           value: duration.seconds === 0 ? 'Permanent' : formatDuration(duration.seconds * 1000),
         },
       );
-    const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId(
-          confirmBan.id({
-            userId: user.id,
-            days: String(days),
-            seconds: String(duration.seconds),
-          }),
-        )
-        .setLabel('Ban')
-        .setStyle(ButtonStyle.Danger),
-      new ButtonBuilder()
-        .setCustomId(cancelBan.id())
-        .setLabel('Cancel')
-        .setStyle(ButtonStyle.Secondary),
-    );
+    const buttons = banConfirm.buttons({
+      userId: user.id,
+      days: String(days),
+      seconds: String(duration.seconds),
+    });
 
     await interaction.reply({
       embeds: [confirmation],

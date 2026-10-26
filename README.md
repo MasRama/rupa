@@ -9,13 +9,19 @@ Rupa is a starting point for discord.js bots that stay readable as they grow. A 
 
 ```ts
 // src/features/moderation/components/ban.ts
-export const confirmBan = button('moderation:ban/:userId/:days', async (interaction, ctx) => {
-  const { userId, days } = ctx.params; // typed from the route
-  // ...
+export const banConfirm = confirm('moderation:ban/:userId/:days/:seconds', {
+  confirmLabel: 'Ban',
+  async onConfirm(interaction, ctx) {
+    const { userId, days } = ctx.params; // typed from the route
+    // ...
+  },
 });
 
 // src/features/moderation/commands/ban.ts
-new ButtonBuilder().setCustomId(confirmBan.id({ userId: user.id, days: '1' }));
+await interaction.reply({
+  embeds: [question],
+  components: [banConfirm.buttons({ userId: user.id, days: '1', seconds: '0' })],
+});
 
 // src/app/features.ts
 export const features: Feature[] = [general, moderation, reminders, guilds, stats, dashboard];
@@ -25,7 +31,7 @@ export const features: Feature[] = [general, moderation, reminders, guilds, stat
 
 - **Features, not layers.** Code is grouped by what it does. A feature folder holds its commands, components, events, SQL and tests, and it never reaches into another feature's internals.
 - **One router for everything.** Slash commands, autocomplete, buttons, select menus, modals and gateway events are all declared the same way.
-- **Custom ids as typed routes.** You write `moderation:ban/:userId` once. Rupa builds the id (`confirmBan.id({ userId })`), parses it back into typed `ctx.params`, URI-encodes values and enforces Discord's 100-character limit. Two features claiming the same route fail at startup, not in production.
+- **Custom ids as typed routes.** You write `moderation:unban/:userId` once. Rupa builds the id (`unbanButton.id({ userId })`), parses it back into typed `ctx.params`, URI-encodes values and enforces Discord's 100-character limit. Two features claiming the same route fail at startup, not in production.
 - **Per-feature SQLite.** It uses `better-sqlite3` with plain SQL and no ORM. Each feature ships ordered migrations, and they run before the bot logs in.
 - **Explicit composition.** Nothing is discovered by file location. `src/app/features.ts` lists exactly what runs and in which order.
 - **Jobs that survive restarts.** Schedule work for later (`ctx.jobs.schedule(unban, payload, { in: '7d' })`) or on a schedule (`every: '1h'`, or cron with a time zone). It is stored in SQLite and retried with backoff when it fails.

@@ -1,5 +1,5 @@
 import { PermissionFlagsBits } from 'discord.js';
-import { button, requireBotPermissions } from '@/core';
+import { confirm, requireBotPermissions } from '@/core';
 import { moderationBlocker } from '../hierarchy';
 import { scheduleUnban } from '../jobs';
 import { caseEmbed, notifyMember, postToLogChannel } from '../replies';
@@ -9,14 +9,17 @@ import { moderationSettings } from '../settings';
 const DAY_SECONDS = 24 * 60 * 60;
 
 /**
- * "Ban" on the confirmation sent by /ban. The route carries the target, how
+ * The Ban / Cancel question sent by /ban. The route carries the target, how
  * many days of messages to delete and how long the ban lasts in seconds (0 for
  * permanent); the reason is read from the confirmation embed so it does not
  * count against the 100-character custom id limit.
  */
-export const confirmBan = button(
-  'moderation:ban/:userId/:days/:seconds',
-  async (interaction, ctx) => {
+export const banConfirm = confirm('moderation:ban/:userId/:days/:seconds', {
+  confirmLabel: 'Ban',
+  cancelled: 'Ban cancelled.',
+  guards: [requireBotPermissions(PermissionFlagsBits.BanMembers)],
+
+  async onConfirm(interaction, ctx) {
     if (!interaction.inCachedGuild()) return;
     const { guild } = interaction;
     const { userId, days } = ctx.params;
@@ -73,9 +76,4 @@ export const confirmBan = button(
     await interaction.followUp({ embeds: [embed] });
     await postToLogChannel(guild, settings.logChannel, embed, ctx.logger);
   },
-  { guards: [requireBotPermissions(PermissionFlagsBits.BanMembers)] },
-);
-
-export const cancelBan = button('moderation:ban-cancel', async interaction => {
-  await interaction.update({ content: 'Ban cancelled.', embeds: [], components: [] });
 });

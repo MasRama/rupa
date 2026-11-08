@@ -45,11 +45,11 @@
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test"
   },
   "dependencies": {
-    "@hono/node-server": "^2.1.5",
+    "@hono/node-server": "^2.1.6",
     "better-sqlite3": "^13.0.3",
     "croner": "^10.0.1",
-    "discord.js": "^14.27.0",
-    "hono": "^4.13.14",
+    "discord.js": "^14.28.1",
+    "hono": "^4.13.16",
     "pino": "^10.4.0",
     "pino-pretty": "^13.2.0",
     "zod": "^4.6.7"
